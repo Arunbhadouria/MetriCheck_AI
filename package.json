@@ -16,11 +16,12 @@
     "dev:web": "npm run dev --workspace=apps/web",
     "dev:api": "npm run dev --workspace=apps/api",
     "dev:ai": "cd apps/ai-service && python -m uvicorn main:app --reload --port 8001",
-    "dev": "npm run dev:api",
+    "dev": "concurrently -n \"API,WEB,AI\" -c \"cyan,green,yellow\" \"npm run dev:api\" \"npm run dev:web\" \"npm run dev:ai\"",
     "test": "npm run test --workspaces --if-present",
     "db:seed": "npm run db:seed --workspace=apps/api"
   },
   "devDependencies": {
+    "concurrently": "^10.0.5",
     "daisyui": "^5.7.40",
     "shadcn": "^4.21.0",
     "typescript": "^5.4.0"
