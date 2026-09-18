@@ -1,0 +1,28 @@
+{
+  "name": "metri-check",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MetriCheck AI — Legal Metrology Compliance Inspection Platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:types": "npm run build --workspace=packages/shared-types",
+    "build:rules": "npm run build --workspace=packages/rule-engine",
+    "build:api": "npm run build --workspace=apps/api",
+    "build:web": "npm run build --workspace=apps/web",
+    "build": "npm run build:types && npm run build:rules && npm run build:api && npm run build:web",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:api": "npm run dev --workspace=apps/api",
+    "dev:ai": "cd apps/ai-service && python -m uvicorn main:app --reload --port 8001",
+    "dev": "npm run dev:api",
+    "test": "npm run test --workspaces --if-present",
+    "db:seed": "npm run db:seed --workspace=apps/api"
+  },
+  "devDependencies": {
+    "daisyui": "^5.7.40",
+    "shadcn": "^4.21.0",
+    "typescript": "^5.4.0"
+  }
+}
