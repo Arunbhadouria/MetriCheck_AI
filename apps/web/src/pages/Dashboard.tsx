@@ -252,6 +252,12 @@ export const Dashboard: React.FC = () => {
             {/* ══ CLEAN OFFICER SCANNER CARD ════════════════════════════════ */}
             <div
               onClick={() => navigate('/inspector/inspections/new')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate('/inspector/inspections/new');
+                }
+              }}
               className="rounded-2xl bg-navy-950 text-white p-4 sm:p-5 cursor-pointer shadow-md hover:bg-navy-900 transition-all flex items-center justify-between group border border-amber-500/30"
               role="button"
               tabIndex={0}
@@ -276,6 +282,12 @@ export const Dashboard: React.FC = () => {
             {/* ══ LAWS & CITIZEN AWARENESS SHORTCUT CARD ═════════════════════ */}
             <div
               onClick={() => navigate('/inspector/laws')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate('/inspector/laws');
+                }
+              }}
               className="p-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 flex items-center justify-between shadow-xs transition cursor-pointer group"
               role="button"
               tabIndex={0}

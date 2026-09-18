@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   X, LayoutDashboard, Scan, FileSpreadsheet, ShieldCheck,
@@ -14,6 +14,9 @@ interface NavigationDrawerProps {
 export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const drawerPanelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const user = (() => {
     try {
@@ -37,13 +40,53 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
     .substring(0, 2)
     .toUpperCase() || 'AV';
 
-  // Close drawer on ESC key
+  // WCAG Focus Trap and Keyboard Management
   useEffect(() => {
+    if (!isOpen) return;
+
+    previousFocusRef.current = document.activeElement as HTMLElement;
+
+    // Focus the close button or first interactive element when opened
+    const timer = setTimeout(() => {
+      closeButtonRef.current?.focus();
+    }, 50);
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose();
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (e.key === 'Tab' && drawerPanelRef.current) {
+        const focusableElements = drawerPanelRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
     };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+      previousFocusRef.current?.focus();
+    };
   }, [isOpen, onClose]);
 
   // Prevent background scroll when open
@@ -106,7 +149,12 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
   ];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden select-none">
+    <div
+      className="fixed inset-0 z-50 overflow-hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="मुख्य नेविगेशन मेनू • Main Navigation Menu"
+    >
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-navy-950/70 backdrop-blur-xs transition-opacity duration-300"
@@ -116,22 +164,26 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
 
       {/* Slide-over Panel */}
       <div className="fixed inset-y-0 left-0 max-w-full flex">
-        <div className="w-72 max-w-[85vw] bg-navy-950 text-slate-100 shadow-2xl border-r border-white/10 flex flex-col z-10 transition-transform duration-300 transform ease-in-out">
+        <div
+          ref={drawerPanelRef}
+          className="w-72 max-w-[85vw] bg-navy-950 text-slate-100 shadow-2xl border-r border-white/10 flex flex-col z-10 transition-transform duration-300 transform ease-in-out"
+        >
           {/* National Tricolor Line */}
           <div className="gov-tricolor shrink-0" />
 
           {/* Drawer Top Header */}
           <div className="p-4 bg-navy-900 border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-amber-500 text-navy-950 font-bold flex items-center justify-center text-xs shadow-sm">
+              <div className="w-7 h-7 rounded-lg bg-amber-500 text-navy-950 font-bold flex items-center justify-center text-xs shadow-sm" aria-hidden="true">
                 म
               </div>
-              <h3 className="text-xs font-bold text-white tracking-tight">MetriCheck AI</h3>
+              <h3 id="drawer-title" className="text-xs font-bold text-white tracking-tight">MetriCheck AI</h3>
             </div>
             <button
+              ref={closeButtonRef}
               onClick={onClose}
               className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 hover:text-white flex items-center justify-center transition active:scale-95 cursor-pointer shadow-xs"
-              aria-label="Close menu"
+              aria-label="Close navigation menu"
             >
               <X className="w-4 h-4 shrink-0" />
             </button>

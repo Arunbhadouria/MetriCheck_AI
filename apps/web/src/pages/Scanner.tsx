@@ -509,7 +509,7 @@ export const Scanner: React.FC = () => {
 
             {/* Permission Loading State */}
             {!isPreviewMode && !isCameraPaused && cameraState === 'REQUESTING_PERMISSION' && (
-              <div className="relative z-10 text-center space-y-2 p-6 bg-navy-950/80 backdrop-blur-md rounded-2xl border border-white/10">
+              <div className="relative z-10 text-center space-y-2 p-6 bg-navy-950/80 backdrop-blur-md rounded-2xl border border-white/10" role="status" aria-live="polite">
                 <div className="w-8 h-8 border-3 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-xs font-bold text-slate-300">Opening camera feed…</p>
               </div>
@@ -517,7 +517,7 @@ export const Scanner: React.FC = () => {
 
             {/* Viewfinder Target Reticle Frame */}
             {cameraState === 'READY' && !isCameraPaused && !isPreviewMode && (
-              <div className="absolute inset-x-8 top-32 bottom-32 pointer-events-none border-2 border-dashed border-amber-400/50 rounded-3xl flex items-center justify-center max-w-md mx-auto">
+              <div className="absolute inset-x-8 top-32 bottom-32 pointer-events-none border-2 border-dashed border-amber-400/50 rounded-3xl flex items-center justify-center max-w-md mx-auto" aria-hidden="true">
                 <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-amber-400 rounded-tl-xl -mt-1 -ml-1" />
                 <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-amber-400 rounded-tr-xl -mt-1 -mr-1" />
                 <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-amber-400 rounded-bl-xl -mb-1 -ml-1" />
@@ -541,15 +541,18 @@ export const Scanner: React.FC = () => {
           <button
             onClick={() => navigate(`/inspector/inspections/${id}/summary`)}
             className="w-9 h-9 rounded-xl bg-navy-900/80 hover:bg-white/15 backdrop-blur-md border border-white/15 flex items-center justify-center text-white transition active:scale-95 shadow-md"
+            aria-label="Cancel scan and return to inspection summary"
             title="Cancel / Close"
           >
             <X className="w-4 h-4" />
           </button>
 
           {/* Mode Switcher Toggle: Demo Mode vs Live Camera */}
-          <div className="flex items-center bg-navy-900/90 backdrop-blur-md border border-white/15 rounded-xl p-1 shadow-lg">
+          <div className="flex items-center bg-navy-900/90 backdrop-blur-md border border-white/15 rounded-xl p-1 shadow-lg" role="radiogroup" aria-label="Scanner Mode">
             <button
               onClick={() => setScanMode('demo')}
+              role="radio"
+              aria-checked={scanMode === 'demo'}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 scanMode === 'demo'
                   ? 'bg-amber-500 text-navy-950 shadow-md shadow-amber-500/30'
@@ -561,6 +564,8 @@ export const Scanner: React.FC = () => {
             </button>
             <button
               onClick={() => setScanMode('camera')}
+              role="radio"
+              aria-checked={scanMode === 'camera'}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 scanMode === 'camera'
                   ? 'bg-amber-500 text-navy-950 shadow-md shadow-amber-500/30'
@@ -583,6 +588,8 @@ export const Scanner: React.FC = () => {
                       ? 'bg-amber-500/25 text-amber-300 border-amber-500/50'
                       : 'bg-white/10 text-slate-300 border-white/15'
                   }`}
+                  aria-label={isMirrored ? 'Turn camera mirroring off' : 'Turn camera mirroring on'}
+                  aria-pressed={isMirrored}
                   title={isMirrored ? 'Mirror: ON' : 'Mirror: OFF'}
                 >
                   <FlipHorizontal className="w-3.5 h-3.5" />
@@ -593,6 +600,7 @@ export const Scanner: React.FC = () => {
                   <button
                     onClick={toggleFacingMode}
                     className="p-1.5 rounded-xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 flex items-center justify-center text-slate-200 transition active:scale-95 shadow-lg"
+                    aria-label="Switch between front and rear cameras"
                     title="Switch Camera"
                   >
                     <SwitchCamera className="w-3.5 h-3.5 text-emerald-400" />

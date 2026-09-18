@@ -417,13 +417,14 @@ export const JurisdictionSetup: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 {/* State Selection */}
                 <div className="form-control">
-                  <label className="label py-1">
+                  <label htmlFor="jurisdiction-state" className="label py-1">
                     <span className="label-text font-bold text-xs text-slate-700 flex items-center gap-1">
                       राज्य • State
                       <span className="text-[9px] text-emerald-700 font-bold bg-emerald-50 px-1 py-0.2 rounded">ऑटो</span>
                     </span>
                   </label>
                   <select
+                    id="jurisdiction-state"
                     value={state}
                     onChange={(e) => handleStateChange(e.target.value)}
                     className="select select-bordered w-full text-xs font-semibold bg-slate-50 border-slate-300"
@@ -436,13 +437,14 @@ export const JurisdictionSetup: React.FC = () => {
 
                 {/* District Selection with Bilingual Labels */}
                 <div className="form-control">
-                  <label className="label py-1">
+                  <label htmlFor="jurisdiction-district" className="label py-1">
                     <span className="label-text font-bold text-xs text-slate-700 flex items-center gap-1">
                       ज़िला • District
                       <span className="text-[9px] text-emerald-700 font-bold bg-emerald-50 px-1 py-0.2 rounded">ऑटो</span>
                     </span>
                   </label>
                   <select
+                    id="jurisdiction-district"
                     value={district}
                     onChange={(e) => handleDistrictChange(e.target.value)}
                     className="select select-bordered w-full text-xs font-semibold bg-slate-50 border-slate-300"
@@ -458,7 +460,7 @@ export const JurisdictionSetup: React.FC = () => {
 
               {/* FIELD 1: ZONE AS STRICT FORMAT TEXT FIELD */}
               <div className="form-control bg-white rounded-xl p-3.5 border-2 border-emerald-500/40 shadow-xs space-y-2">
-                <label className="label py-0">
+                <label htmlFor="jurisdiction-zone" className="label py-0">
                   <span className="label-text font-bold text-xs text-navy-900 flex items-center justify-between w-full">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
@@ -482,9 +484,12 @@ export const JurisdictionSetup: React.FC = () => {
                     <Building className={`w-4 h-4 ${isZoneValid ? 'text-emerald-600' : 'text-slate-400'}`} />
                   </div>
                   <input
+                    id="jurisdiction-zone"
                     type="text"
                     value={zone}
                     onChange={(e) => handleZoneChange(e.target.value)}
+                    aria-describedby="zone-format-hint"
+                    aria-invalid={!isZoneValid && !!zone}
                     placeholder="उदा. Zone 01 — Lashkar या Zone 08 — Vijay Nagar"
                     className={`input input-bordered w-full pl-10 pr-24 text-xs sm:text-sm font-semibold bg-white transition-all ${
                       !zone 
@@ -501,6 +506,7 @@ export const JurisdictionSetup: React.FC = () => {
                       onClick={handleFixZoneFormat}
                       className="absolute right-2 top-1/2 -translate-y-1/2 btn btn-xs btn-warning text-[10px] font-bold h-7 px-2 gap-1"
                       title="क्लिक करके सही प्रारूप में बदलें"
+                      aria-label="Format zone to official standard"
                     >
                       <Wand2 className="w-3 h-3" />
                       <span>प्रारूप सुधारें</span>
@@ -509,7 +515,7 @@ export const JurisdictionSetup: React.FC = () => {
                 </div>
 
                 {/* Strict Format Rule Notice */}
-                <div className="flex items-center justify-between text-[10px]">
+                <div id="zone-format-hint" className="flex items-center justify-between text-[10px]" role="status" aria-live="polite">
                   <span className={`font-medium ${!zone ? 'text-slate-500' : isZoneValid ? 'text-emerald-700 font-semibold' : 'text-amber-700 font-bold'}`}>
                     {!zone && '📌 अनिवार्य प्रारूप: Zone [XX] — [मंडल नाम] (उदा. Zone 01 — Lashkar)'}
                     {zone && !isZoneValid && '⚠️ प्रारूप त्रुटि: केवल "Zone XX — Area Name" प्रारूप ही स्वीकार्य है'}
@@ -523,7 +529,7 @@ export const JurisdictionSetup: React.FC = () => {
                     <div className="flex items-center justify-between text-[10px] text-slate-500 font-semibold">
                       <span>{district} के आधिकारिक प्रारूप (टैप करके सीधे भरें):</span>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Suggested zone formats">
                       {suggestedZones.map((z) => (
                         <button
                           key={z}
@@ -546,7 +552,7 @@ export const JurisdictionSetup: React.FC = () => {
 
               {/* FIELD 2: COMMERCIAL HUB / MARKET NAME TEXT FIELD */}
               <div className="form-control bg-white rounded-xl p-3.5 border-2 border-emerald-500/40 shadow-xs space-y-2">
-                <label className="label py-0">
+                <label htmlFor="jurisdiction-market-name" className="label py-0">
                   <span className="label-text font-bold text-xs text-navy-900 flex items-center justify-between w-full">
                     <span className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
@@ -563,6 +569,7 @@ export const JurisdictionSetup: React.FC = () => {
                     <MapPin className="w-4 h-4 text-emerald-600" />
                   </div>
                   <input
+                    id="jurisdiction-market-name"
                     type="text"
                     value={marketName}
                     onChange={(e) => {

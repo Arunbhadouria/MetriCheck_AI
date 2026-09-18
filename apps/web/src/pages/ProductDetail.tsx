@@ -37,6 +37,17 @@ export const ProductDetail: React.FC = () => {
       .finally(() => setLoading(false));
   }, [id, productId]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (showModal) setShowModal(false);
+        if (editingDecl) setEditingDecl(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showModal, editingDecl]);
+
   const handleSaveObservation = () => {
     setManualNote(`[${severity.toUpperCase()} - ${obsCategory}] ${noteText}`);
     setShowModal(false);
@@ -220,26 +231,28 @@ export const ProductDetail: React.FC = () => {
 
       {/* Edit Declaration Modal (DaisyUI) */}
       {editingDecl && (
-        <div className="modal modal-open">
+        <div className="modal modal-open" role="dialog" aria-modal="true" aria-labelledby="edit-decl-title">
           <div className="modal-box bg-white border border-base-300 p-5 space-y-4 max-w-sm">
             <div className="flex justify-between items-center border-b border-base-300 pb-3">
               <div>
-                <h3 className="text-sm font-semibold text-base-content">घोषणा संपादित करें • Edit OCR</h3>
+                <h3 id="edit-decl-title" className="text-sm font-semibold text-base-content">घोषणा संपादित करें • Edit OCR</h3>
                 <p className="badge badge-warning badge-xs font-semibold uppercase tracking-wider mt-1">{editingDecl.field}</p>
               </div>
               <button
                 onClick={() => setEditingDecl(null)}
                 className="btn btn-ghost btn-xs btn-circle text-base-content/60"
+                aria-label="Close edit declaration modal"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="form-control">
-              <label className="label">
+              <label htmlFor="edit-decl-val" className="label">
                 <span className="label-text font-semibold text-xs">मान • Extracted Value</span>
               </label>
               <input
+                id="edit-decl-val"
                 type="text"
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
@@ -269,16 +282,17 @@ export const ProductDetail: React.FC = () => {
 
       {/* Add Observation Modal (DaisyUI) */}
       {showModal && (
-        <div className="modal modal-open">
+        <div className="modal modal-open" role="dialog" aria-modal="true" aria-labelledby="obs-modal-title">
           <div className="modal-box bg-white border border-base-300 p-5 space-y-4 max-w-md">
             <div className="flex justify-between items-center border-b border-base-300 pb-3">
               <div>
-                <h3 className="text-sm font-bold text-navy-900">मैनुअल टिप्पणी • Observation</h3>
+                <h3 id="obs-modal-title" className="text-sm font-bold text-navy-900">मैनुअल टिप्पणी • Observation</h3>
                 <p className="text-[10px] text-slate-500 font-bold truncate mt-0.5">{product?.productName}</p>
               </div>
               <button
                 onClick={() => setShowModal(false)}
                 className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition cursor-pointer"
+                aria-label="Close observation modal"
               >
                 <X className="w-4 h-4 shrink-0" />
               </button>
@@ -287,10 +301,12 @@ export const ProductDetail: React.FC = () => {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">श्रेणी • Category</label>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Observation Category">
                   {(['Label issue', 'Weight discrepancy', 'Price issue', 'Date issue', 'Other'] as const).map((cat) => (
                     <button
                       key={cat}
+                      role="radio"
+                      aria-checked={obsCategory === cat}
                       onClick={() => setObsCategory(cat)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                         obsCategory === cat
@@ -306,10 +322,12 @@ export const ProductDetail: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">गंभीरता • Severity</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Observation Severity">
                   {(['Minor', 'Major', 'Critical'] as const).map((sev) => (
                     <button
                       key={sev}
+                      role="radio"
+                      aria-checked={severity === sev}
                       onClick={() => setSeverity(sev)}
                       className={`py-2 px-3 rounded-xl text-xs font-bold transition-all text-center shadow-xs cursor-pointer ${
                         severity === sev
@@ -326,11 +344,12 @@ export const ProductDetail: React.FC = () => {
               </div>
 
               <div className="form-control">
-                <label className="label py-1">
+                <label htmlFor="obs-note-text" className="label py-1">
                   <span className="label-text font-bold text-xs text-slate-700">विवरण • Note</span>
                 </label>
                 <div className="relative">
                   <textarea
+                    id="obs-note-text"
                     rows={3}
                     value={noteText}
                     onChange={(e) => setNoteText(e.target.value)}
@@ -342,6 +361,8 @@ export const ProductDetail: React.FC = () => {
                     className={`btn btn-circle btn-xs absolute right-3 bottom-3 cursor-pointer ${
                       isRecording ? 'btn-error animate-pulse' : 'btn-primary'
                     }`}
+                    aria-label={isRecording ? 'Stop voice recording' : 'Start voice recording'}
+                    aria-pressed={isRecording}
                   >
                     <Mic className="w-3.5 h-3.5" />
                   </button>

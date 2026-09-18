@@ -28,6 +28,16 @@ export const ScanResult: React.FC = () => {
       .finally(() => setIsLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedBboxDecl) {
+        setSelectedBboxDecl(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedBboxDecl]);
+
   const product = inspection?.products?.[inspection.products.length - 1];
 
   if (isLoading) {
@@ -188,7 +198,7 @@ export const ScanResult: React.FC = () => {
                 >
                   {score}
                 </span>
-                <span className="text-xs text-slate-400 font-medium"> / 100</span>
+                <span className="text-xs text-slate-600 font-semibold"> / 100</span>
               </div>
             </div>
 
@@ -200,8 +210,12 @@ export const ScanResult: React.FC = () => {
                 }`}
                 value={score}
                 max="100"
+                aria-label="AI Compliance Credit Score"
+                aria-valuenow={score}
+                aria-valuemin={0}
+                aria-valuemax={100}
               />
-              <div className="flex justify-between text-[10px] text-slate-400 font-semibold uppercase">
+              <div className="flex justify-between text-[10px] text-slate-600 font-bold uppercase">
                 <span>0 (High Risk)</span>
                 <span>50 (Moderate)</span>
                 <span>100 (Compliant)</span>
@@ -401,17 +415,18 @@ export const ScanResult: React.FC = () => {
 
       {/* DaisyUI Evidence Modal */}
       {selectedBboxDecl && (
-        <div className="modal modal-open">
+        <div className="modal modal-open" role="dialog" aria-modal="true" aria-labelledby="ocr-overlay-title">
           <div className="modal-box bg-white border border-base-300 p-5 space-y-4 max-w-sm">
             <div className="flex justify-between items-center border-b border-base-300 pb-3">
               <div>
                 <span className="badge badge-warning badge-xs font-semibold uppercase text-[8px]">AI OCR LOCATOR</span>
-                <h3 className="text-sm font-semibold text-navy-900 mt-1">{selectedBboxDecl.label}</h3>
+                <h3 id="ocr-overlay-title" className="text-sm font-semibold text-navy-900 mt-1">{selectedBboxDecl.label}</h3>
                 <p className="text-xs font-bold text-success">{selectedBboxDecl.value}</p>
               </div>
               <button
                 onClick={() => setSelectedBboxDecl(null)}
                 className="btn btn-ghost btn-xs btn-circle text-base-content/60"
+                aria-label="Close OCR locator overlay"
               >
                 <X className="w-4 h-4" />
               </button>

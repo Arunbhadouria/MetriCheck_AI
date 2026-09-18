@@ -21,7 +21,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <>
-      <header className="sticky top-0 z-30 select-none">
+      <header className="sticky top-0 z-30">
         <div className="gov-tricolor" />
         <div className="bg-navy-900 text-white px-3 sm:px-4 py-2.5 flex items-center justify-between gap-2 shadow-sm">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -32,6 +32,8 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => setDrawerOpen(true)}
                 className="w-9 h-9 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-white border border-slate-700/60 shadow-xs flex items-center justify-center shrink-0 transition active:scale-95 cursor-pointer"
                 aria-label="Open Navigation Menu"
+                aria-expanded={drawerOpen}
+                aria-haspopup="dialog"
                 title="मेनू • Menu"
               >
                 <Menu className="w-4 h-4 text-amber-400 shrink-0" />

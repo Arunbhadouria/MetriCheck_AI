@@ -110,7 +110,7 @@ export const AllInspections: React.FC = () => {
   };
 
   return (
-    <div className="gov-page text-base-content pb-24 select-none">
+    <div className="gov-page text-base-content pb-24">
       <Header
         title="सभी निरीक्षण • All Inspections"
         showBack={true}
@@ -126,8 +126,10 @@ export const AllInspections: React.FC = () => {
               <Search className="w-4 h-4" />
             </div>
             <input
+              id="inspection-search"
               type="text"
               placeholder="दुकान का नाम, संदर्भ संख्या, लाइसेंस या ज़ोन खोजें..."
+              aria-label="दुकान का नाम, संदर्भ संख्या, लाइसेंस या ज़ोन खोजें • Search inspections"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="input input-bordered w-full pl-10 pr-10 text-xs sm:text-sm font-medium bg-white"
@@ -137,6 +139,7 @@ export const AllInspections: React.FC = () => {
                 type="button"
                 onClick={() => setSearchQuery('')}
                 className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                aria-label="Clear search query"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -146,8 +149,10 @@ export const AllInspections: React.FC = () => {
           {/* Filter Tabs & Sort Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
             {/* Filter Pills */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Filter inspections by compliance status">
               <button
+                role="tab"
+                aria-selected={statusFilter === 'ALL'}
                 onClick={() => setStatusFilter('ALL')}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === 'ALL'
@@ -158,6 +163,8 @@ export const AllInspections: React.FC = () => {
                 <span>सभी • All ({inspections.length})</span>
               </button>
               <button
+                role="tab"
+                aria-selected={statusFilter === 'FAIL'}
                 onClick={() => setStatusFilter('FAIL')}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === 'FAIL'
@@ -168,6 +175,8 @@ export const AllInspections: React.FC = () => {
                 <span>उल्लंघन दर्ज (Fail)</span>
               </button>
               <button
+                role="tab"
+                aria-selected={statusFilter === 'PASS'}
                 onClick={() => setStatusFilter('PASS')}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === 'PASS'
@@ -178,6 +187,8 @@ export const AllInspections: React.FC = () => {
                 <span>पूर्ण अनुपालित (Pass)</span>
               </button>
               <button
+                role="tab"
+                aria-selected={statusFilter === 'DRAFT'}
                 onClick={() => setStatusFilter('DRAFT')}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                   statusFilter === 'DRAFT'

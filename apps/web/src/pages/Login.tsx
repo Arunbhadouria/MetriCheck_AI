@@ -591,8 +591,8 @@ export const Login: React.FC = () => {
             {viewMode === 'LOGIN' && (
               <form onSubmit={handleLoginSubmit} className="p-6 space-y-4">
                 <div className="form-control">
-                  <label className="label py-1">
-                    <span className="label-text font-semibold text-xs text-slate-600">
+                  <label htmlFor="login-employee-id" className="label py-1">
+                    <span className="label-text font-semibold text-xs text-slate-700">
                       कर्मचारी आईडी या ईमेल • Employee ID / Email
                     </span>
                   </label>
@@ -601,6 +601,7 @@ export const Login: React.FC = () => {
                       <User className="w-4 h-4" />
                     </div>
                     <input
+                      id="login-employee-id"
                       type="text"
                       placeholder="उदा. LM-MP-0421 या आपका यूनिक आईडी"
                       value={employeeId}
@@ -613,13 +614,13 @@ export const Login: React.FC = () => {
 
                 <div className="form-control">
                   <div className="flex justify-between items-center py-1">
-                    <label className="label-text font-semibold text-xs text-slate-600">
+                    <label htmlFor="login-password" className="label-text font-semibold text-xs text-slate-700">
                       पासवर्ड • Password
                     </label>
                     <button
                       type="button"
                       onClick={handleAutoFillJudge}
-                      className="text-[11px] text-saffron hover:underline font-semibold"
+                      className="text-xs text-amber-800 hover:text-amber-950 font-bold px-2 py-1 rounded-md bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer"
                     >
                       Fill Sample Credentials
                     </button>
@@ -629,6 +630,7 @@ export const Login: React.FC = () => {
                       <Lock className="w-4 h-4" />
                     </div>
                     <input
+                      id="login-password"
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -636,11 +638,13 @@ export const Login: React.FC = () => {
                       className="input input-bordered w-full pl-10 pr-10 text-sm font-medium bg-white"
                       required
                     />
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2">
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="text-slate-400 hover:text-slate-600 cursor-pointer"
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        aria-pressed={showPassword}
                       >
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -685,7 +689,7 @@ export const Login: React.FC = () => {
                 </div>
 
                 <div className="form-control">
-                  <label className="label py-0.5">
+                  <label htmlFor="reg-name" className="label py-0.5">
                     <span className="label-text font-semibold text-xs text-slate-700">
                       पूरा नाम • Official Full Name *
                     </span>
@@ -695,6 +699,7 @@ export const Login: React.FC = () => {
                       <User className="w-4 h-4" />
                     </div>
                     <input
+                      id="reg-name"
                       type="text"
                       placeholder="उदा. डॉ. राजेश कुमार"
                       value={regName}
@@ -707,7 +712,7 @@ export const Login: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="form-control">
-                    <label className="label py-0.5">
+                    <label htmlFor="reg-email" className="label py-0.5">
                       <span className="label-text font-semibold text-xs text-slate-700">
                         विभागीय ईमेल • Email *
                       </span>
@@ -717,6 +722,7 @@ export const Login: React.FC = () => {
                         <Mail className="w-4 h-4" />
                       </div>
                       <input
+                        id="reg-email"
                         type="email"
                         placeholder="officer@lm.gov.in"
                         value={regEmail}
@@ -728,7 +734,7 @@ export const Login: React.FC = () => {
                   </div>
 
                   <div className="form-control">
-                    <label className="label py-0.5">
+                    <label htmlFor="reg-phone" className="label py-0.5">
                       <span className="label-text font-semibold text-xs text-slate-700">
                         मोबाइल नंबर • Mobile *
                       </span>
@@ -738,6 +744,7 @@ export const Login: React.FC = () => {
                         <Phone className="w-4 h-4" />
                       </div>
                       <input
+                        id="reg-phone"
                         type="tel"
                         placeholder="9876543210"
                         value={regPhone}
@@ -751,12 +758,13 @@ export const Login: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="form-control">
-                    <label className="label py-0.5">
+                    <label htmlFor="reg-state" className="label py-0.5">
                       <span className="label-text font-semibold text-xs text-slate-700">
                         राज्य • State *
                       </span>
                     </label>
                     <select
+                      id="reg-state"
                       value={regState}
                       onChange={(e) => setRegState(e.target.value)}
                       className="select select-bordered w-full text-xs font-medium bg-white"
@@ -770,7 +778,7 @@ export const Login: React.FC = () => {
                   </div>
 
                   <div className="form-control">
-                    <label className="label py-0.5">
+                    <label htmlFor="reg-district" className="label py-0.5">
                       <span className="label-text font-semibold text-xs text-slate-700">
                         ज़िला • District *
                       </span>
@@ -780,6 +788,7 @@ export const Login: React.FC = () => {
                         <MapPin className="w-4 h-4" />
                       </div>
                       <input
+                        id="reg-district"
                         type="text"
                         placeholder="उदा. Indore / Pune"
                         value={regDistrict}
@@ -792,7 +801,7 @@ export const Login: React.FC = () => {
                 </div>
 
                 <div className="form-control">
-                  <label className="label py-0.5">
+                  <label htmlFor="reg-zone" className="label py-0.5">
                     <span className="label-text font-semibold text-xs text-slate-700">
                       कार्यक्षेत्र/सर्कल • Jurisdiction Zone / Circle *
                     </span>
@@ -802,6 +811,7 @@ export const Login: React.FC = () => {
                       <MapPin className="w-4 h-4" />
                     </div>
                     <input
+                      id="reg-zone"
                       type="text"
                       placeholder="उदा. Zone 04 — Central Market Circle"
                       value={regZone}
@@ -814,7 +824,7 @@ export const Login: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="form-control">
-                    <label className="label py-0.5">
+                    <label htmlFor="reg-password" className="label py-0.5">
                       <span className="label-text font-semibold text-xs text-slate-700">
                         पासवर्ड • Password (min 6) *
                       </span>
@@ -824,6 +834,7 @@ export const Login: React.FC = () => {
                         <Lock className="w-4 h-4" />
                       </div>
                       <input
+                        id="reg-password"
                         type="password"
                         placeholder="••••••••"
                         value={regPassword}
@@ -835,7 +846,7 @@ export const Login: React.FC = () => {
                   </div>
 
                   <div className="form-control">
-                    <label className="label py-0.5">
+                    <label htmlFor="reg-confirm-password" className="label py-0.5">
                       <span className="label-text font-semibold text-xs text-slate-700">
                         पुष्टि करें • Confirm *
                       </span>
@@ -845,6 +856,7 @@ export const Login: React.FC = () => {
                         <Lock className="w-4 h-4" />
                       </div>
                       <input
+                        id="reg-confirm-password"
                         type="password"
                         placeholder="••••••••"
                         value={regConfirmPassword}
