@@ -344,7 +344,7 @@ export const JurisdictionSetup: React.FC = () => {
     <div className="gov-page text-base-content pb-16">
       <Header title={step === 1 ? 'क्षेत्र • Jurisdiction' : step === 2 ? 'निरीक्षण विवरण • Details' : 'तैयार • Ready'} />
 
-      <div className="max-w-md mx-auto p-4 space-y-4">
+      <div className="max-w-md sm:max-w-xl lg:max-w-3xl xl:max-w-4xl mx-auto p-4 md:p-6 space-y-5">
         {/* Step Indicator Progress */}
         <div className="gov-card p-3">
           <div className="flex justify-between text-xs font-semibold text-slate-500 mb-1.5">

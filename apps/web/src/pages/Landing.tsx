@@ -611,6 +611,19 @@ export const Landing: React.FC = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <button
+                className="btn"
+                style={{
+                  background: '#f8fafc',
+                  color: '#4338ca',
+                  borderColor: '#c7d2fe',
+                  fontWeight: 700
+                }}
+                onClick={() => navigate('/consumer/scan')}
+                title="नागरिक एवं उपभोक्ता सेवा"
+              >
+                🛍️ Citizen View
+              </button>
               {isAuthenticated ? (
                 <button
                   className="btn btn-primary"
@@ -657,6 +670,48 @@ export const Landing: React.FC = () => {
                   See the inspection flow
                 </a>
               </div>
+
+              {/* Citizen Portal Hero Banner */}
+              <div style={{
+                margin: '22px 0',
+                padding: '16px 20px',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)',
+                border: '1.5px solid #c7d2fe',
+                borderRadius: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#4338ca', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    उपभोक्ता सुरक्षा • For Citizens & Consumers
+                  </span>
+                  <span style={{ fontSize: '11px', background: '#e0e7ff', color: '#3730a3', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                    🎙️ Bilingual Voice AI
+                  </span>
+                </div>
+                <p style={{ margin: 0, fontSize: '13.5px', color: '#1e293b', fontWeight: 500 }}>
+                  सामान खरीदने से पहले पैकेट स्कैन करें: <strong>MRP, एक्सपायरी व अतिरिक्त वसूली</strong> की तुरंत जांचें और वॉयस AI से सुनें। ओवरचार्जिंग पर 1-क्लिक में अपने स्थानीय विधिक माप विज्ञान अधिकारी को शिकायत भेजें।
+                </p>
+                <div>
+                  <button
+                    className="btn"
+                    style={{
+                      background: '#4338ca',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontWeight: 700,
+                      fontSize: '13.5px',
+                      padding: '10px 18px',
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => navigate('/consumer/scan')}
+                  >
+                    📱 नागरिक स्कैनर खोलें • Open Citizen Scanner →
+                  </button>
+                </div>
+              </div>
+
               <div className="trust">
                 <span>
                   <i className="dot" />

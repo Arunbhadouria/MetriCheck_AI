@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Download, CheckCircle, XCircle, Send, AlertTriangle, ShieldCheck, Scale, Loader2, MapPin, Store, UserCheck, FileCheck2, ExternalLink } from 'lucide-react';
 import { fetchApi } from '../services/api';
+import { aiBackgroundManager, useAiBackgroundTasks } from '../services/aiBackgroundManager';
+import { AiProcessingCircleLoader } from '../components/AiProcessingCircleLoader';
 
 export const ReportPreview: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +13,8 @@ export const ReportPreview: React.FC = () => {
   const [inspection, setInspection] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const { runningTasks, waitForAllTasks } = useAiBackgroundTasks(id);
+  const [showCircleLoader, setShowCircleLoader] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem('metricheck_user') || '{}');
   const isDemoUser = currentUser?.id === 'usr_inspector_1' || currentUser?.employeeId === 'LM-MP-0421';
@@ -23,6 +27,11 @@ export const ReportPreview: React.FC = () => {
   }, [id]);
 
   const handleSubmitReport = async () => {
+    if (aiBackgroundManager.isAnyTaskRunning(id)) {
+      setShowCircleLoader(true);
+      await waitForAllTasks();
+      setShowCircleLoader(false);
+    }
     setSubmitting(true);
     try {
       await fetchApi(`/inspections/${id}/finalize`, { method: 'POST' });
@@ -58,7 +67,7 @@ export const ReportPreview: React.FC = () => {
     <div className="gov-page text-base-content pb-24">
       <Header title="रिपोर्ट पूर्वावलोकन • Report Preview" />
 
-      <div className="max-w-xl mx-auto p-4 md:p-6 space-y-4">
+      <div className="max-w-xl lg:max-w-3xl xl:max-w-4xl mx-auto p-4 md:p-6 space-y-5">
         {/* Inspection Header Block */}
         <div className="gov-card">
           <div className="card-body p-4 sm:p-5 space-y-3">
@@ -343,6 +352,13 @@ export const ReportPreview: React.FC = () => {
           </button>
         </div>
       </div>
+
+      <AiProcessingCircleLoader
+        isOpen={showCircleLoader}
+        tasks={runningTasks}
+        title="अंतिम AI विश्लेषण पूर्ण हो रहा है..."
+        subtitle="कृपया प्रतीक्षा करें, निरीक्षण रिपोर्ट अंतिम रूप से जमा करने से पूर्व पृष्ठभूमि में चल रहे OCR व वैधानिक नियमों का सत्यापन पूरा किया जा रहा है।"
+      />
     </div>
   );
 };

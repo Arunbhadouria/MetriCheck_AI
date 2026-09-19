@@ -39,7 +39,12 @@ const UPLOADS_DIR = resolveUploadsDir();
 const storageConfig = multer.diskStorage({
   destination: (req: any, file: any, cb: any) => cb(null, UPLOADS_DIR),
   filename: (req: any, file: any, cb: any) => {
-    const ext = path.extname(file.originalname) || '.jpg';
+    let ext = path.extname(file.originalname);
+    if (!ext || ext === '.') {
+      if (file.mimetype === 'image/webp') ext = '.webp';
+      else if (file.mimetype === 'image/png') ext = '.png';
+      else ext = '.jpg';
+    }
     cb(null, `img_${Date.now()}_${Math.random().toString(36).substring(2, 8)}${ext}`);
   }
 });
@@ -633,6 +638,57 @@ app.post('/api/v1/sync/batch', authenticateToken, (req: Request, res: Response) 
       timestamp: new Date().toISOString()
     }
   });
+});
+
+// ── CITIZEN COMPLAINTS & GRIEVANCES API ──────────────────────────────────────
+// 1. Submit a citizen complaint (Public, no auth required)
+app.post(['/api/v1/complaints', '/complaints'], (req: Request, res: Response) => {
+  try {
+    const complaint = dbStore.createComplaint(req.body);
+    res.status(201).json({
+      success: true,
+      data: complaint,
+      message: 'Complaint submitted successfully and routed to Zone Officer.'
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: { message: err.message || 'Failed to submit complaint' } });
+  }
+});
+
+// 2. List complaints (Filtered by officer zone/district/state or by citizen phone)
+app.get(['/api/v1/complaints', '/complaints'], authenticateToken, (req: any, res: Response) => {
+  const phone = req.query.phone as string | undefined;
+  const zone = req.query.zone || req.user?.jurisdictionZone;
+  const district = req.query.district || req.user?.jurisdictionDistrict;
+  const state = req.query.state || req.user?.jurisdictionState;
+  
+  const complaints = dbStore.getComplaints({ zone, district, state, phone });
+  res.json({ success: true, data: complaints });
+});
+
+// 3. Citizen tracking lookup by trackingId (Public, no auth required)
+app.get(['/api/v1/complaints/track/:trackingId', '/complaints/track/:trackingId'], (req: Request, res: Response) => {
+  const complaint = dbStore.getComplaintByTrackingId(req.params.trackingId);
+  if (!complaint) {
+    return res.status(404).json({
+      success: false,
+      error: { code: 'NOT_FOUND', message: 'No complaint found matching this tracking ID.' }
+    });
+  }
+  res.json({ success: true, data: complaint });
+});
+
+// 4. Update complaint status by officer
+app.patch(['/api/v1/complaints/:id/status', '/complaints/:id/status'], authenticateToken, (req: any, res: Response) => {
+  const { status, remarks, officerRemarks } = req.body;
+  const officerName = req.user?.name || 'Amit Verma';
+  const officerEmpId = req.user?.employeeId || 'LM-MP-0421';
+
+  const updated = dbStore.updateComplaintStatus(req.params.id, status, officerRemarks || remarks, officerName, officerEmpId);
+  if (!updated) {
+    return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Complaint not found.' } });
+  }
+  res.json({ success: true, data: updated, message: 'Status updated successfully.' });
 });
 
 app.listen(PORT, () => {

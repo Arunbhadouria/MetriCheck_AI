@@ -107,7 +107,7 @@ export const ProductDetail: React.FC = () => {
     <div className="gov-page text-base-content pb-24">
       <Header title="उत्पाद विवरण • Product Detail" />
 
-      <div className="max-w-xl mx-auto p-4 md:p-6 space-y-4">
+      <div className="max-w-xl lg:max-w-4xl xl:max-w-5xl mx-auto p-4 md:p-6 space-y-5">
         {/* Product Identity Header */}
         <div className="gov-card">
           <div className="card-body p-4 sm:p-5 flex flex-row items-start justify-between gap-3">

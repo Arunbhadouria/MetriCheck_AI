@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   X, LayoutDashboard, Scan, FileSpreadsheet, ShieldCheck,
   LogOut, ChevronRight, UserCheck, ExternalLink, HelpCircle,
-  Building2, MapPin, BookOpen
+  Building2, MapPin, BookOpen, Home, Clock, Scale, ShoppingBag
 } from 'lucide-react';
 
 interface NavigationDrawerProps {
@@ -18,7 +18,19 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  const user = (() => {
+  const isConsumerRoute = location.pathname.startsWith('/consumer') || location.pathname.startsWith('/citizen');
+
+  // Citizen data
+  const citizenUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('metricheck_citizen_user') || 'null');
+    } catch {
+      return null;
+    }
+  })();
+
+  // Officer data
+  const officerUser = (() => {
     try {
       return JSON.parse(localStorage.getItem('metricheck_user') || '{}');
     } catch {
@@ -26,13 +38,11 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
     }
   })();
 
-  const officerName = user?.name || 'Amit Verma';
-  const officerEmpId = user?.employeeId || 'LM-MP-0421';
-  const officerDistrict = user?.jurisdictionDistrict || 'Indore';
-  const officerState = user?.jurisdictionState || 'Madhya Pradesh';
-  const officerZone = user?.jurisdictionZone || 'Zone 01';
+  const officerName = officerUser?.name || 'Amit Verma';
+  const officerEmpId = officerUser?.employeeId || 'LM-MP-0421';
+  const officerZone = officerUser?.jurisdictionZone || 'Zone 01';
 
-  const initials = officerName
+  const officerInitials = officerName
     .split(' ')
     .filter(Boolean)
     .map((n: string) => n[0])
@@ -46,7 +56,6 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
 
     previousFocusRef.current = document.activeElement as HTMLElement;
 
-    // Focus the close button or first interactive element when opened
     const timer = setTimeout(() => {
       closeButtonRef.current?.focus();
     }, 50);
@@ -107,15 +116,57 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('metricheck_token');
-    localStorage.removeItem('metricheck_user');
-    onClose();
-    navigate('/');
+    if (isConsumerRoute) {
+      localStorage.removeItem('metricheck_citizen_token');
+      localStorage.removeItem('metricheck_citizen_user');
+      onClose();
+      navigate('/landing');
+    } else {
+      localStorage.removeItem('metricheck_token');
+      localStorage.removeItem('metricheck_user');
+      onClose();
+      navigate('/login');
+    }
   };
 
   if (!isOpen) return null;
 
-  const navItems = [
+  // Dedicated Consumer Navigation Items
+  const consumerNavItems = [
+    {
+      id: 'consumer_dashboard',
+      label: 'उपभोक्ता डैशबोर्ड • Dashboard',
+      path: '/consumer/dashboard',
+      icon: <Home className="w-5 h-5 text-amber-400" />
+    },
+    {
+      id: 'consumer_scan',
+      label: 'सामान स्कैन करें • Scan Product',
+      path: '/consumer/scan',
+      icon: <Scan className="w-5 h-5 text-emerald-400" />
+    },
+    {
+      id: 'consumer_history',
+      label: 'स्कैन इतिहास • Scan History',
+      path: '/consumer/dashboard?tab=history',
+      icon: <Clock className="w-5 h-5 text-sky-400" />
+    },
+    {
+      id: 'consumer_grievances',
+      label: 'मेरी शिकायतें • My Grievances',
+      path: '/consumer/dashboard?tab=grievances',
+      icon: <Scale className="w-5 h-5 text-rose-400" />
+    },
+    {
+      id: 'consumer_rights',
+      label: 'उपभोक्ता अधिकार • Legal Rights',
+      path: '/consumer/dashboard?tab=rights',
+      icon: <ShieldCheck className="w-5 h-5 text-indigo-400" />
+    }
+  ];
+
+  // Dedicated Inspector Navigation Items
+  const officerNavItems = [
     {
       id: 'dashboard',
       label: 'डैशबोर्ड • Dashboard',
@@ -148,6 +199,8 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
     }
   ];
 
+  const navItems = isConsumerRoute ? consumerNavItems : officerNavItems;
+
   return (
     <div
       className="fixed inset-0 z-50 overflow-hidden"
@@ -177,7 +230,12 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
               <div className="w-7 h-7 rounded-lg bg-amber-500 text-navy-950 font-bold flex items-center justify-center text-xs shadow-sm" aria-hidden="true">
                 म
               </div>
-              <h3 id="drawer-title" className="text-xs font-bold text-white tracking-tight">MetriCheck AI</h3>
+              <div>
+                <h3 id="drawer-title" className="text-xs font-bold text-white tracking-tight">
+                  {isConsumerRoute ? 'नागरिक सेवा • Citizen Portal' : 'MetriCheck AI Inspector'}
+                </h3>
+                <p className="text-[9px] text-slate-400">Legal Metrology India</p>
+              </div>
             </div>
             <button
               ref={closeButtonRef}
@@ -189,18 +247,55 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
             </button>
           </div>
 
-          {/* Officer Profile Card */}
-          <div className="p-3.5 bg-navy-900/50 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500 text-navy-950 font-bold flex items-center justify-center text-sm shadow-md shrink-0">
-                {initials}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="text-sm font-bold text-white truncate">{officerName}</h4>
-                <p className="text-[11px] font-mono text-slate-300 truncate">{officerEmpId} • {officerZone}</p>
+          {/* Profile Card (Context Aware) */}
+          {isConsumerRoute ? (
+            <div className="p-3.5 bg-gradient-to-r from-navy-900 via-navy-950 to-navy-900 border-b border-white/10">
+              {citizenUser ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 text-navy-950 font-black flex items-center justify-center text-sm shadow-md shrink-0">
+                    {citizenUser.name?.substring(0, 2)?.toUpperCase() || 'ना'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-sm font-bold text-white truncate">{citizenUser.name}</h4>
+                      <span className="badge badge-xs bg-emerald-500/20 text-emerald-300 border-emerald-500/30 text-[9px] font-bold">नागरिक</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 font-mono truncate">{citizenUser.phone || '9826012345'}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-white/10 text-amber-400 flex items-center justify-center shrink-0">
+                      <ShoppingBag className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-white">नागरिक उपभोक्ता</h4>
+                      <p className="text-[10px] text-slate-400">विधिक मापविज्ञान सत्यापन</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleNavigate('/consumer/auth')}
+                    className="btn btn-xs bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold border-none cursor-pointer"
+                  >
+                    लॉगिन
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-3.5 bg-navy-900/50 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500 text-navy-950 font-bold flex items-center justify-center text-sm shadow-md shrink-0">
+                  {officerInitials}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="text-sm font-bold text-white truncate">{officerName}</h4>
+                  <p className="text-[11px] font-mono text-slate-300 truncate">{officerEmpId} • {officerZone}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Navigation Links */}
           <div className="flex-1 overflow-y-auto p-3 space-y-1">
@@ -208,7 +303,7 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
               const currentFullPath = `${location.pathname}${location.search}`;
               const isActive = item.path.includes('?')
                 ? currentFullPath === item.path
-                : location.pathname === item.path && (!location.search || location.search === '?tab=dashboard');
+                : location.pathname === item.path && (!location.search || location.search === '?tab=dashboard' || location.search === '?tab=overview');
 
               return (
                 <button
@@ -232,13 +327,33 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
 
           {/* Drawer Footer */}
           <div className="p-3.5 bg-navy-900/90 border-t border-white/10 shrink-0">
-            <button
-              onClick={handleLogout}
-              className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-red-600/30 transition active:scale-95 cursor-pointer"
-            >
-              <LogOut className="w-4 h-4 shrink-0" />
-              <span>लॉगआउट • Logout</span>
-            </button>
+            {isConsumerRoute ? (
+              citizenUser ? (
+                <button
+                  onClick={handleLogout}
+                  className="w-full py-2.5 px-4 rounded-xl bg-red-600/90 hover:bg-red-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-red-600/30 transition active:scale-95 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4 shrink-0" />
+                  <span>नागरिक लॉगआउट • Citizen Logout</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleNavigate('/consumer/auth')}
+                  className="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition active:scale-95 cursor-pointer"
+                >
+                  <UserCheck className="w-4 h-4 shrink-0" />
+                  <span>नागरिक लॉगिन / पंजीकरण • Login</span>
+                </button>
+              )
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-red-600/30 transition active:scale-95 cursor-pointer"
+              >
+                <LogOut className="w-4 h-4 shrink-0" />
+                <span>लॉगआउट • Logout</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

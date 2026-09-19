@@ -5,7 +5,7 @@ import {
   Plus, Search, RefreshCw, ChevronRight, Layers, Clock, ShieldCheck,
   CheckCircle2, AlertOctagon, UserCheck, Award, Printer, Copy, Check,
   MapPin, Phone, Mail, Building2, Calendar, FileText, Sparkles,
-  ArrowLeft, ExternalLink, User, Scan, BookOpen
+  ArrowLeft, ExternalLink, User, Scan, BookOpen, MessageSquare
 } from 'lucide-react';
 import { fetchApi } from '../services/api';
 
@@ -166,7 +166,7 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-xl lg:max-w-3xl mx-auto p-4 md:p-6 space-y-4">
+      <div className="max-w-xl lg:max-w-5xl xl:max-w-6xl mx-auto p-4 md:p-6 space-y-5">
         {/* ══════════════════════════════════════════════════════════════════════ */}
         {/* ── VIEW 1: DASHBOARD OPERATIONS ──────────────────────────────────── */}
         {/* ══════════════════════════════════════════════════════════════════════ */}
@@ -222,96 +222,147 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Real Metrics Row */}
-                <div className="stats stats-horizontal bg-base-200 border border-base-300 mt-4 w-full divide-x divide-base-300">
-                  <div className="stat py-2.5 px-3">
-                    <div className="stat-title text-[10px] uppercase font-semibold text-slate-500">कुल निरीक्षण</div>
-                    <div className="stat-value text-lg font-bold text-navy-900">
+                {/* Real Metrics Grid: 4 responsive tiles */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4">
+                  <div className="bg-base-200/80 border border-base-300 rounded-xl p-3 text-center">
+                    <div className="text-[10px] uppercase font-semibold text-slate-500">कुल निरीक्षण</div>
+                    <div className="text-xl font-bold text-navy-900 mt-0.5">
                       {summary ? summary.totalInspections : (loading ? '—' : 0)}
                     </div>
-                    <div className="stat-desc text-[9px] font-medium text-slate-400">Total Cases</div>
+                    <div className="text-[9px] font-medium text-slate-400">Total Cases</div>
                   </div>
-                  <div className="stat py-2.5 px-3">
-                    <div className="stat-title text-[10px] uppercase font-semibold text-emerald-700">सत्यापित अनुपालन</div>
-                    <div className="stat-value text-lg font-bold text-emerald-700">
+
+                  <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 text-center">
+                    <div className="text-[10px] uppercase font-semibold text-emerald-800">सत्यापित अनुपालन</div>
+                    <div className="text-xl font-bold text-emerald-700 mt-0.5">
                       {summary ? summary.compliant : (loading ? '—' : 0)}
                     </div>
-                    <div className="stat-desc text-[9px] font-medium text-emerald-600/80">PASS</div>
+                    <div className="text-[9px] font-medium text-emerald-600">PASS</div>
                   </div>
-                  <div className="stat py-2.5 px-3">
-                    <div className="stat-title text-[10px] uppercase font-semibold text-error">दर्ज उल्लंघन</div>
-                    <div className="stat-value text-lg font-bold text-error">
+
+                  <div className="bg-red-50/70 border border-red-200 rounded-xl p-3 text-center">
+                    <div className="text-[10px] uppercase font-semibold text-red-800">दर्ज उल्लंघन</div>
+                    <div className="text-xl font-bold text-error mt-0.5">
                       {summary ? summary.nonCompliant : (loading ? '—' : 0)}
                     </div>
-                    <div className="stat-desc text-[9px] font-medium text-error/70">FAIL</div>
+                    <div className="text-[9px] font-medium text-red-600">FAIL</div>
+                  </div>
+
+                  <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3 text-center">
+                    <div className="text-[10px] uppercase font-semibold text-amber-800">प्रक्रियाधीन / ड्राफ्ट</div>
+                    <div className="text-xl font-bold text-amber-700 mt-0.5">
+                      {summary ? (summary.pendingReview ?? 0) : (loading ? '—' : 0)}
+                    </div>
+                    <div className="text-[9px] font-medium text-amber-600">IN PROGRESS</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ══ CLEAN OFFICER SCANNER CARD ════════════════════════════════ */}
-            <div
-              onClick={() => navigate('/inspector/inspections/new')}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  navigate('/inspector/inspections/new');
-                }
-              }}
-              className="rounded-2xl bg-navy-950 text-white p-4 sm:p-5 cursor-pointer shadow-md hover:bg-navy-900 transition-all flex items-center justify-between group border border-amber-500/30"
-              role="button"
-              tabIndex={0}
-              aria-label="Start New Inspection"
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-xl bg-amber-500 text-navy-950 flex items-center justify-center font-bold shadow-md shrink-0 group-hover:scale-105 transition-transform">
-                  <Scan className="w-6 h-6" />
+            {/* ══ RESPONSIVE DESKTOP DUAL COLUMN LAYOUT ══════════════════════ */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              {/* LEFT COLUMN (lg:col-span-5): Quick Actions & Shortcuts */}
+              <div className="lg:col-span-5 space-y-4">
+                {/* ══ CLEAN OFFICER SCANNER CARD ════════════════════════════════ */}
+                <div
+                  onClick={() => navigate('/inspector/inspections/new')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate('/inspector/inspections/new');
+                    }
+                  }}
+                  className="rounded-2xl bg-navy-950 text-white p-4 sm:p-5 cursor-pointer shadow-md hover:bg-navy-900 transition-all flex items-center justify-between group border border-amber-500/30"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Start New Inspection"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-xl bg-amber-500 text-navy-950 flex items-center justify-center font-bold shadow-md shrink-0 group-hover:scale-105 transition-transform">
+                      <Scan className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-amber-300 transition-colors">
+                        नया निरीक्षण शुरू करें • Start Inspection
+                      </h3>
+                      <p className="text-xs text-slate-300 mt-0.5">
+                        पैकेज स्कैन करने के लिए टैप करें
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-amber-400 group-hover:translate-x-1 transition-transform shrink-0" />
                 </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-amber-300 transition-colors">
-                    नया निरीक्षण शुरू करें • Start Inspection
-                  </h3>
-                  <p className="text-xs text-slate-300 mt-0.5">
-                    पैकेज स्कैन करने के लिए टैप करें
-                  </p>
+
+                {/* ══ CITIZEN COMPLAINTS SHORTCUT CARD ════════════════════════════ */}
+                <div
+                  onClick={() => navigate('/inspector/inspections?tab=grievances')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate('/inspector/inspections?tab=grievances');
+                    }
+                  }}
+                  className="p-3.5 rounded-xl bg-amber-50 hover:bg-amber-100/80 border border-amber-300 flex items-center justify-between shadow-xs transition cursor-pointer group"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="View citizen complaints in this zone"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-amber-500 text-navy-950 flex items-center justify-center shrink-0 font-bold shadow-xs">
+                      <MessageSquare className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs font-bold text-navy-950 truncate">
+                          नागरिक शिकायतें • Citizen Grievances
+                        </h4>
+                        <span className="badge badge-warning badge-xs font-bold text-[9px]">LIVE</span>
+                      </div>
+                      <p className="text-[11px] text-amber-900 truncate">
+                        उपभोक्ताओं द्वारा दर्ज अधिक वसूली व अवैध स्टिकर मामले
+                      </p>
+                    </div>
+                  </div>
+
+                  <ChevronRight className="w-4 h-4 text-amber-700 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </div>
+
+                {/* ══ LAWS & CITIZEN AWARENESS SHORTCUT CARD ═════════════════════ */}
+                <div
+                  onClick={() => navigate('/inspector/laws')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate('/inspector/laws');
+                    }
+                  }}
+                  className="p-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 flex items-center justify-between shadow-xs transition cursor-pointer group"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Open Legal Metrology Laws & Awareness Guide"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0">
+                      <BookOpen className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-navy-950 truncate">
+                        विधिक नियम व अधिनियम • Acts & Rules
+                      </h4>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        LMPC Rules 2011, Act 2009 एवं आधिकारिक वेबसाइट्स
+                      </p>
+                    </div>
+                  </div>
+
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-amber-400 group-hover:translate-x-1 transition-transform shrink-0" />
-            </div>
 
-            {/* ══ LAWS & CITIZEN AWARENESS SHORTCUT CARD ═════════════════════ */}
-            <div
-              onClick={() => navigate('/inspector/laws')}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  navigate('/inspector/laws');
-                }
-              }}
-              className="p-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 flex items-center justify-between shadow-xs transition cursor-pointer group"
-              role="button"
-              tabIndex={0}
-              aria-label="Open Legal Metrology Laws & Awareness Guide"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center shrink-0">
-                  <BookOpen className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-bold text-navy-950 truncate">
-                    विधिक नियम व अधिनियम • Acts & Rules
-                  </h4>
-                  <p className="text-[11px] text-slate-500 truncate">
-                    LMPC Rules 2011, Act 2009 एवं आधिकारिक वेबसाइट्स
-                  </p>
-                </div>
-              </div>
-
-              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
-            </div>
-
-            {/* Inspection Search Input */}
-            <div className="form-control">
+              {/* RIGHT COLUMN (lg:col-span-7): Search, Filter & Inspection Ledger */}
+              <div className="lg:col-span-7 space-y-4">
+                {/* Inspection Search Input */}
+                <div className="form-control">
               <div className="relative">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                   <Search className="w-4 h-4" />
@@ -474,6 +525,8 @@ export const Dashboard: React.FC = () => {
                     </>
                   )}
                 </div>
+              </div>
+            </div>
               </div>
             </div>
           </>

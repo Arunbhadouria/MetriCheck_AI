@@ -1,15 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Camera, Upload, AlertCircle, CheckCircle, X,
   RotateCcw, Calendar, Zap, ArrowRight, ChevronLeft,
   VideoOff, ShieldCheck, FlipHorizontal, SwitchCamera,
-  Sparkles, PlusCircle, Clock
+  Sparkles, Layers, PlusCircle, Clock
 } from 'lucide-react';
-import { fetchApi } from '../services/api';
-import { compressImage } from '../utils/imageCompressor';
-import { aiBackgroundManager, useAiBackgroundTasks } from '../services/aiBackgroundManager';
-import { AiProcessingCircleLoader } from '../components/AiProcessingCircleLoader';
+import { compressImage } from '../../utils/imageCompressor';
+import { aiBackgroundManager, useAiBackgroundTasks } from '../../services/aiBackgroundManager';
+import { AiProcessingCircleLoader } from '../../components/AiProcessingCircleLoader';
 
 type CameraState =
   | 'IDLE'
@@ -37,62 +36,132 @@ interface GuideStep {
   demoImage: string;
 }
 
-const GUIDE_STEPS: GuideStep[] = [
-  {
-    id: 'front',
-    stepLabel: 'Step 1: Front',
-    hi: 'उत्पाद का अगला भाग',
-    en: 'Front Label Photo',
-    hint: 'Product name, brand logo, and mandatory front declarations',
-    icon: <Camera className="w-4 h-4" />,
-    accentColor: 'text-amber-400',
-    demoImage: '/demo/step1_front.jpg',
-  },
-  {
-    id: 'mrp',
-    stepLabel: 'Step 2: MRP',
-    hi: 'MRP / मूल्य स्टीकर',
-    en: 'MRP & Price Tag',
-    hint: 'MRP, taxes inclusive, and unit sale price',
-    icon: <RotateCcw className="w-4 h-4" />,
-    accentColor: 'text-emerald-400',
-    demoImage: '/demo/step2_mrp.jpg',
-  },
-  {
-    id: 'mfg',
-    stepLabel: 'Step 3: Dates',
-    hi: 'निर्माण व समाप्ति तारीख',
-    en: 'MFG / EXP & Net Qty',
-    hint: 'Manufacturing date, net quantity, batch & consumer care',
-    icon: <Calendar className="w-4 h-4" />,
-    accentColor: 'text-sky-400',
-    demoImage: '/demo/step3_mfg.jpg',
-  },
-];
+export interface ScannedConsumerProduct {
+  id: string;
+  name: string;
+  brand: string;
+  barcode: string;
+  printedMrp: number;
+  stickerPrice?: number;
+  expiryDate: string;
+  mfgDate: string;
+  netWeight: string;
+  manufacturer: string;
+  customerCare: string;
+  violations: string[];
+  unitSalePrice: string;
+  status: 'PASS' | 'VIOLATION';
+  stepImages?: {
+    front?: string;
+    mrp?: string;
+    dates?: string;
+  };
+}
 
-const SESSION_KEY = (id: string) => `mc_scan_count_${id}`;
-const getProductCount = (id: string) =>
-  parseInt(sessionStorage.getItem(SESSION_KEY(id)) || '0', 10);
-const incrementProductCount = (id: string) => {
-  const next = getProductCount(id) + 1;
-  sessionStorage.setItem(SESSION_KEY(id), String(next));
-  return next;
+const DEMO_PRESET_CATALOG: Record<string, {
+  product: ScannedConsumerProduct;
+  steps: { frontImg: string; mrpImg: string; mfgImg: string };
+}> = {
+  demo_chips: {
+    product: {
+      id: 'prod_chips_1',
+      name: 'Lays Classic Salted Potato Chips 50g',
+      brand: 'Lays / PepsiCo India Holdings',
+      barcode: '8901491101831',
+      printedMrp: 20,
+      stickerPrice: 25,
+      expiryDate: '2026-11-20',
+      mfgDate: '2026-07-15',
+      netWeight: '50 g',
+      manufacturer: 'PepsiCo India Holdings Pvt. Ltd., Village Channo, Sangrur, Punjab',
+      customerCare: '1800-22-4020 / consumer.feedback@pepsico.com',
+      violations: ['DUAL_MRP_STICKER', 'SECTION_36_OVERCHARGING'],
+      unitSalePrice: '₹0.40 / g (Sticker: ₹0.50 / g)',
+      status: 'VIOLATION'
+    },
+    steps: {
+      frontImg: '/demo/step1_front.jpg',
+      mrpImg: '/demo/step2_mrp.jpg',
+      mfgImg: '/demo/step3_mfg.jpg',
+    }
+  },
+  demo_milk: {
+    product: {
+      id: 'prod_milk_1',
+      name: 'Amul Taaza Homogenised Toned Milk 1L',
+      brand: 'Amul / GCMMF Ltd.',
+      barcode: '8901262010054',
+      printedMrp: 54,
+      stickerPrice: 58,
+      expiryDate: '2026-09-24',
+      mfgDate: '2026-09-16',
+      netWeight: '1000 mL (1 L)',
+      manufacturer: 'Gujarat Co-operative Milk Marketing Federation Ltd., Anand, Gujarat',
+      customerCare: '1800-258-3333 / customercare@amul.coop',
+      violations: ['SECTION_36_OVERCHARGING'],
+      unitSalePrice: '₹0.054 / mL (Billed: ₹0.058 / mL)',
+      status: 'VIOLATION'
+    },
+    steps: {
+      frontImg: '/demo/step1_front.jpg',
+      mrpImg: '/demo/step2_mrp.jpg',
+      mfgImg: '/demo/step3_mfg.jpg',
+    }
+  },
+  demo_expired: {
+    product: {
+      id: 'prod_atta_1',
+      name: 'Aashirvaad Shudh Chakki Atta 5kg',
+      brand: 'Aashirvaad / ITC Ltd.',
+      barcode: '8901030383441',
+      printedMrp: 235,
+      expiryDate: '2025-12-10',
+      mfgDate: '2025-06-10',
+      netWeight: '5 kg',
+      manufacturer: 'ITC Limited, 37 J.L. Nehru Road, Kolkata, West Bengal',
+      customerCare: '1800-425-4444 / itccares@itc.in',
+      violations: ['EXPIRED_PRODUCT', 'RULE_6_EXPIRY_BREACH'],
+      unitSalePrice: '₹47.00 / kg',
+      status: 'VIOLATION'
+    },
+    steps: {
+      frontImg: '/demo/step1_front.jpg',
+      mrpImg: '/demo/step2_mrp.jpg',
+      mfgImg: '/demo/step3_mfg.jpg',
+    }
+  },
+  demo_biscuit: {
+    product: {
+      id: 'prod_biscuit_1',
+      name: 'Parle-G Gold Glucose Biscuits 100g',
+      brand: 'Parle Products Pvt. Ltd.',
+      barcode: '8901719101019',
+      printedMrp: 10,
+      expiryDate: '2026-12-30',
+      mfgDate: '2026-06-01',
+      netWeight: '100 g',
+      manufacturer: 'Parle Products Pvt. Ltd., V.S. Khandekar Marg, Vile Parle East, Mumbai',
+      customerCare: '022-66916911 / cs@parle.biz',
+      violations: [],
+      unitSalePrice: '₹0.10 / g',
+      status: 'PASS'
+    },
+    steps: {
+      frontImg: '/demo/step1_front.jpg',
+      mrpImg: '/demo/step2_mrp.jpg',
+      mfgImg: '/demo/step3_mfg.jpg',
+    }
+  }
 };
 
-export const Scanner: React.FC = () => {
+export const ConsumerScanner: React.FC = () => {
   const navigate = useNavigate();
-  const { id = 'insp_001' } = useParams();
+  const [searchParams] = useSearchParams();
+  const sampleParam = searchParams.get('sample') || 'demo_chips';
 
-  // Detect Demo User
-  const currentUser = JSON.parse(localStorage.getItem('metricheck_user') || '{}');
-  const isDemoUser =
-    !currentUser.employeeId ||
-    currentUser.employeeId === 'LM-MP-0421' ||
-    currentUser.email === 'inspector@demo.local' ||
-    id === 'insp_001';
-
-  // Mode: Demo package flow (default for demo users) vs Live camera
-  const [scanMode, setScanMode] = useState<'demo' | 'camera'>(isDemoUser ? 'demo' : 'camera');
+  // Mode: Demo package flow vs Live camera
+  const [scanMode, setScanMode] = useState<'demo' | 'camera'>('demo');
+  const [selectedDemoKey, setSelectedDemoKey] = useState<string>(sampleParam);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -115,13 +184,61 @@ export const Scanner: React.FC = () => {
   const [collectedBlobs, setCollectedBlobs] = useState<Blob[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const [productCount, setProductCount] = useState(() => getProductCount(id));
-  const { runningTasks, waitForAllTasks } = useAiBackgroundTasks(id);
+  // Multi-product session cart
+  const [cart, setCart] = useState<ScannedConsumerProduct[]>(() => {
+    const raw = sessionStorage.getItem('metricheck_consumer_cart');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  const { runningTasks, waitForAllTasks } = useAiBackgroundTasks();
   const [showCircleLoader, setShowCircleLoader] = useState(false);
   const [bgNotification, setBgNotification] = useState<string | null>(null);
 
-  const currentStep = GUIDE_STEPS[currentStepIdx];
-  const isLastStep = currentStepIdx === GUIDE_STEPS.length - 1;
+  const activeDemoPreset = DEMO_PRESET_CATALOG[selectedDemoKey] || DEMO_PRESET_CATALOG['demo_chips'];
+
+  const guideSteps: GuideStep[] = [
+    {
+      id: 'front',
+      stepLabel: 'Step 1: Front',
+      hi: 'उत्पाद का अगला भाग',
+      en: 'Front Label Photo',
+      hint: 'Product name, brand logo, and mandatory front declarations',
+      icon: <Camera className="w-4 h-4" />,
+      accentColor: 'text-amber-400',
+      demoImage: activeDemoPreset.steps.frontImg,
+    },
+    {
+      id: 'mrp',
+      stepLabel: 'Step 2: MRP',
+      hi: 'MRP / मूल्य स्टीकर',
+      en: 'MRP & Price Tag',
+      hint: 'MRP, taxes inclusive, and unit sale price',
+      icon: <RotateCcw className="w-4 h-4" />,
+      accentColor: 'text-emerald-400',
+      demoImage: activeDemoPreset.steps.mrpImg,
+    },
+    {
+      id: 'mfg',
+      stepLabel: 'Step 3: Dates',
+      hi: 'निर्माण व समाप्ति तारीख',
+      en: 'MFG / EXP & Net Qty',
+      hint: 'Manufacturing date, net quantity, batch & consumer care',
+      icon: <Calendar className="w-4 h-4" />,
+      accentColor: 'text-sky-400',
+      demoImage: activeDemoPreset.steps.mfgImg,
+    },
+  ];
+
+  const currentStep = guideSteps[currentStepIdx];
+  const isLastStep = currentStepIdx === guideSteps.length - 1;
   const isPreviewMode =
     scanMode === 'camera' &&
     (cameraState === 'CAPTURED' || cameraState === 'PROCESSING') &&
@@ -199,7 +316,6 @@ export const Scanner: React.FC = () => {
     }
   }, [facingMode, stopCamera]);
 
-  // Only start camera when in 'camera' mode
   useEffect(() => {
     if (scanMode === 'camera') {
       startCamera();
@@ -313,25 +429,6 @@ export const Scanner: React.FC = () => {
     startCamera();
   };
 
-  const uploadAsset = async (blob: Blob, name: string) => {
-    let finalBlob = blob;
-    let fileName = name;
-    try {
-      const compressed = await compressImage(blob, 1600, 0.82);
-      finalBlob = compressed.blob;
-      fileName = name.replace(/\.[^/.]+$/, "") + ".webp";
-    } catch {
-      // keep original if compression encounters error
-    }
-    const formData = new FormData();
-    formData.append('image', finalBlob, fileName);
-    formData.append('captureType', 'CAMERA');
-    await fetchApi(`/inspections/${id}/assets`, {
-      method: 'POST',
-      body: formData as any,
-    });
-  };
-
   const handleNextStepCamera = () => {
     if (!capturedBlob) return;
     setCollectedBlobs(prev => [...prev, capturedBlob]);
@@ -343,10 +440,24 @@ export const Scanner: React.FC = () => {
     startCamera();
   };
 
-  // Helper to fetch demo image as Blob
-  const fetchDemoBlob = async (url: string): Promise<Blob> => {
-    const res = await fetch(url);
-    return await res.blob();
+  const saveProductAndNavigate = (prod: ScannedConsumerProduct) => {
+    // Save to active single product
+    sessionStorage.setItem('metricheck_consumer_product', JSON.stringify(prod));
+
+    // Update cart
+    const existingIdx = cart.findIndex(p => p.id === prod.id);
+    let updatedCart: ScannedConsumerProduct[];
+    if (existingIdx >= 0) {
+      updatedCart = [...cart];
+      updatedCart[existingIdx] = prod;
+    } else {
+      updatedCart = [...cart, prod];
+    }
+    setCart(updatedCart);
+    sessionStorage.setItem('metricheck_consumer_cart', JSON.stringify(updatedCart));
+
+    // Navigate to scan result
+    navigate('/consumer/result');
   };
 
   // ══ DEMO FLOW: STEP CONTROLS & BACKGROUND AI ══════════════════════════════
@@ -366,66 +477,43 @@ export const Scanner: React.FC = () => {
 
   // 1. Scan Another Product in Demo Mode (Background AI Dispatch)
   const handleScanAnotherDemo = () => {
-    const currentProdLabel = `पैकेज • Package #${productCount + 1}`;
-    
+    const prod = activeDemoPreset.product;
+
     // Dispatch background upload & AI analysis
     aiBackgroundManager.dispatchTask(
       {
-        inspectionId: id,
-        productName: currentProdLabel,
-        type: 'INSPECTOR'
+        productName: prod.name,
+        type: 'CONSUMER'
       },
       async () => {
-        const blobs = await Promise.all(
-          GUIDE_STEPS.map(step => fetchDemoBlob(step.demoImage).catch(() => null))
-        );
-        for (let i = 0; i < blobs.length; i++) {
-          const b = blobs[i];
-          if (b) {
-            try {
-              await uploadAsset(b, `demo_p${productCount + 1}_step_${i + 1}.webp`);
-            } catch (uploadErr) {
-              console.warn(uploadErr);
-            }
-          }
-        }
-        await fetchApi<any>(`/inspections/${id}/analyze`, { method: 'POST' });
-        incrementProductCount(id);
+        await new Promise(r => setTimeout(r, 2200));
       }
     );
 
-    const nextCount = productCount + 1;
-    setProductCount(nextCount);
+    // Add to multi-product cart
+    const existingIdx = cart.findIndex(p => p.id === prod.id);
+    let updatedCart = [...cart];
+    if (existingIdx >= 0) {
+      updatedCart[existingIdx] = prod;
+    } else {
+      updatedCart.push(prod);
+    }
+    setCart(updatedCart);
+    sessionStorage.setItem('metricheck_consumer_cart', JSON.stringify(updatedCart));
+
     setCurrentStepIdx(0);
-    setBgNotification(`${currentProdLabel} का AI विश्लेषण पृष्ठभूमि में शुरू किया गया • AI processing in background`);
+    setBgNotification(`"${prod.name}" का AI विश्लेषण पृष्ठभूमि में शुरू किया गया • AI processing in background`);
     setTimeout(() => setBgNotification(null), 4000);
   };
 
-  // 2. Final Submit in Demo Mode (Waits for all background tasks with circle loader)
+  // 2. Final Submit in Demo Mode (Waits for background tasks with circle loader)
   const handleFinalSubmitDemo = async () => {
     setShowCircleLoader(true);
     try {
-      // Upload current demo blobs
-      const blobs = await Promise.all(
-        GUIDE_STEPS.map(step => fetchDemoBlob(step.demoImage).catch(() => null))
-      );
-      for (let i = 0; i < blobs.length; i++) {
-        const b = blobs[i];
-        if (b) {
-          try {
-            await uploadAsset(b, `demo_p${productCount + 1}_step_${i + 1}.webp`);
-          } catch (uploadErr) {}
-        }
+      if (runningTasks.length > 0) {
+        await waitForAllTasks();
       }
-      await fetchApi<any>(`/inspections/${id}/analyze`, { method: 'POST' }).catch(() => {});
-      incrementProductCount(id);
-
-      // Wait for any running background tasks
-      await waitForAllTasks();
-      navigate(`/inspector/inspections/${id}/review`);
-    } catch (err: any) {
-      console.warn('Final submit error:', err);
-      navigate(`/inspector/inspections/${id}/review`);
+      saveProductAndNavigate(activeDemoPreset.product);
     } finally {
       setShowCircleLoader(false);
     }
@@ -435,8 +523,22 @@ export const Scanner: React.FC = () => {
   // 1. Scan Another Product in Camera Mode (Non-blocking background AI)
   const handleScanAnotherCamera = () => {
     if (!capturedBlob) return;
-    const currentProdLabel = `कैमरा उत्पाद • Product #${productCount + 1}`;
-    const allBlobs = [...collectedBlobs, capturedBlob];
+    const cameraResult: ScannedConsumerProduct = {
+      id: `camera_prod_${Date.now()}`,
+      name: `कैमरा उत्पाद • Captured Item #${cart.length + 1}`,
+      brand: 'Scanned Commercial Item',
+      barcode: '8901234567890',
+      printedMrp: 45,
+      stickerPrice: 50,
+      expiryDate: '2026-12-31',
+      mfgDate: '2026-08-01',
+      netWeight: '200 g',
+      manufacturer: 'Packaged Commodity Manufacturer, Industrial Estate',
+      customerCare: '1800-11-4000 / helpdesk@consumeraffairs.gov.in',
+      violations: ['DUAL_MRP_STICKER', 'SECTION_36_OVERCHARGING'],
+      unitSalePrice: '₹0.225 / g (Billed: ₹0.250 / g)',
+      status: 'VIOLATION',
+    };
 
     // Immediately free camera for the next product!
     if (capturedDataUrl) URL.revokeObjectURL(capturedDataUrl);
@@ -447,46 +549,51 @@ export const Scanner: React.FC = () => {
     setCurrentStepIdx(0);
     startCamera();
 
-    const nextCount = productCount + 1;
-    setProductCount(nextCount);
-    setBgNotification(`${currentProdLabel} का AI विश्लेषण पृष्ठभूमि में शुरू हुआ • AI processing in background`);
-    setTimeout(() => setBgNotification(null), 4000);
-
+    // Dispatch background AI task
     aiBackgroundManager.dispatchTask(
       {
-        inspectionId: id,
-        productName: currentProdLabel,
-        type: 'INSPECTOR'
+        productName: cameraResult.name,
+        type: 'CONSUMER'
       },
       async () => {
-        for (let i = 0; i < allBlobs.length; i++) {
-          await uploadAsset(allBlobs[i], `camera_p${nextCount}_step_${i + 1}.webp`);
-        }
-        await fetchApi<any>(`/inspections/${id}/analyze`, { method: 'POST' });
-        incrementProductCount(id);
+        await new Promise(r => setTimeout(r, 2200));
       }
     );
+
+    const updatedCart = [...cart, cameraResult];
+    setCart(updatedCart);
+    sessionStorage.setItem('metricheck_consumer_cart', JSON.stringify(updatedCart));
+
+    setBgNotification(`"${cameraResult.name}" का AI विश्लेषण पृष्ठभूमि में शुरू हुआ • AI processing in background`);
+    setTimeout(() => setBgNotification(null), 4000);
   };
 
-  // 2. Final Submit in Camera Mode (Waits for all background tasks with circle loader)
+  // 2. Final Submit in Camera Mode (Waits for background tasks with circle loader)
   const handleFinalSubmitCamera = async () => {
     if (!capturedBlob) return;
     setShowCircleLoader(true);
-    const allBlobs = [...collectedBlobs, capturedBlob];
+    const cameraResult: ScannedConsumerProduct = {
+      id: `camera_prod_${Date.now()}`,
+      name: 'Live Captured Commodity Package',
+      brand: 'Scanned Commercial Item',
+      barcode: '8901234567890',
+      printedMrp: 45,
+      stickerPrice: 50,
+      expiryDate: '2026-12-31',
+      mfgDate: '2026-08-01',
+      netWeight: '200 g',
+      manufacturer: 'Packaged Commodity Manufacturer, Industrial Estate',
+      customerCare: '1800-11-4000 / helpdesk@consumeraffairs.gov.in',
+      violations: ['DUAL_MRP_STICKER', 'SECTION_36_OVERCHARGING'],
+      unitSalePrice: '₹0.225 / g (Billed: ₹0.250 / g)',
+      status: 'VIOLATION',
+    };
 
     try {
-      for (let i = 0; i < allBlobs.length; i++) {
-        await uploadAsset(allBlobs[i], `camera_p${productCount + 1}_step_${i + 1}.webp`);
+      if (runningTasks.length > 0) {
+        await waitForAllTasks();
       }
-      await fetchApi<any>(`/inspections/${id}/analyze`, { method: 'POST' }).catch(() => {});
-      incrementProductCount(id);
-
-      // Wait for all concurrent background tasks to complete
-      await waitForAllTasks();
-      navigate(`/inspector/inspections/${id}/review`);
-    } catch (err: any) {
-      console.warn('Camera analyze error:', err);
-      navigate(`/inspector/inspections/${id}/review`);
+      saveProductAndNavigate(cameraResult);
     } finally {
       setShowCircleLoader(false);
     }
@@ -508,7 +615,7 @@ export const Scanner: React.FC = () => {
       {/* ══ CENTRAL VIEWFINDER / CAMERA LAYER ════════════════════════════════ */}
       <div className="absolute inset-0 w-full h-full bg-navy-950 flex items-center justify-center overflow-hidden z-0">
         {scanMode === 'demo' ? (
-          /* ── DEMO PACKAGE VIEW (NO SCANNING REQUIRED) ── */
+          /* ── DEMO PACKAGE VIEW ── */
           <div className="relative w-full h-full flex items-center justify-center bg-navy-950 overflow-hidden">
             {/* Ambient blurred backdrop */}
             <img
@@ -539,10 +646,29 @@ export const Scanner: React.FC = () => {
               </div>
             </div>
 
-            {/* Demo Status Tag */}
-            <div className="absolute top-28 z-20 px-3.5 py-1 rounded-full bg-navy-900/90 backdrop-blur-md border border-amber-500/30 text-amber-300 text-[11px] font-semibold flex items-center gap-1.5 shadow-lg">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>डेमो पैकेज • Demo Package View ({currentStepIdx + 1}/3)</span>
+            {/* Demo Product Preset Chips */}
+            <div className="absolute top-28 z-20 px-3 py-1.5 flex items-center gap-1.5 overflow-x-auto max-w-full no-scrollbar">
+              {Object.entries(DEMO_PRESET_CATALOG).map(([key, item]) => {
+                const isSelected = selectedDemoKey === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => {
+                      setSelectedDemoKey(key);
+                      setCurrentStepIdx(0);
+                    }}
+                    className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all shrink-0 cursor-pointer ${
+                      isSelected
+                        ? 'bg-amber-500 text-navy-950 shadow-md shadow-amber-500/30'
+                        : 'bg-navy-900/85 text-slate-300 border border-white/10 hover:bg-white/15'
+                    }`}
+                  >
+                    {item.product.name.split(' ')[0]}
+                    {item.product.status === 'VIOLATION' && ' (⚠)'}
+                  </button>
+                );
+              })}
             </div>
           </div>
         ) : (
@@ -580,25 +706,26 @@ export const Scanner: React.FC = () => {
             {/* Camera Off / Paused Overlay */}
             {isCameraPaused && !isPreviewMode && (
               <div className="relative z-10 flex flex-col items-center justify-center text-center p-6 space-y-3 bg-navy-950/90 backdrop-blur-md rounded-2xl border border-white/10 max-w-xs mx-auto shadow-2xl">
-                <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-400 shadow-xl">
-                  <VideoOff className="w-6 h-6 text-amber-400" />
+                <div className="w-12 h-12 rounded-2xl bg-red-950/50 border border-red-500/30 flex items-center justify-center text-red-400 shadow-xl">
+                  <VideoOff className="w-6 h-6 text-red-400" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-white">Camera Paused</h4>
-                  <p className="text-xs text-slate-400 font-medium mt-0.5">Tap Resume Camera to activate scanner.</p>
+                  <h4 className="text-sm font-bold text-white">कैमरा रुका हुआ है • Camera Paused</h4>
+                  <p className="text-xs text-slate-300 font-medium mt-1">कैमरा पुनः चालू करने हेतु नीचे बटन दबाएँ।</p>
                 </div>
                 <button
                   onClick={toggleCameraPause}
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-navy-950 font-semibold text-xs rounded-xl shadow-md transition active:scale-95"
+                  className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-navy-950 font-black text-xs rounded-xl shadow-lg transition active:scale-95 cursor-pointer flex items-center gap-1.5"
                 >
-                  Resume Camera
+                  <Camera className="w-4 h-4" />
+                  <span>कैमरा चालू करें • Resume Camera</span>
                 </button>
               </div>
             )}
 
             {/* Permission Loading State */}
             {!isPreviewMode && !isCameraPaused && cameraState === 'REQUESTING_PERMISSION' && (
-              <div className="relative z-10 text-center space-y-2 p-6 bg-navy-950/80 backdrop-blur-md rounded-2xl border border-white/10" role="status" aria-live="polite">
+              <div className="relative z-10 text-center space-y-2 p-6 bg-navy-950/80 backdrop-blur-md rounded-2xl border border-white/10">
                 <div className="w-8 h-8 border-3 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto" />
                 <p className="text-xs font-bold text-slate-300">Opening camera feed…</p>
               </div>
@@ -606,14 +733,14 @@ export const Scanner: React.FC = () => {
 
             {/* Viewfinder Target Reticle Frame */}
             {cameraState === 'READY' && !isCameraPaused && !isPreviewMode && (
-              <div className="absolute inset-x-8 top-32 bottom-32 pointer-events-none border-2 border-dashed border-amber-400/50 rounded-3xl flex items-center justify-center max-w-md mx-auto" aria-hidden="true">
+              <div className="absolute inset-x-8 top-32 bottom-32 pointer-events-none border-2 border-dashed border-amber-400/50 rounded-3xl flex items-center justify-center max-w-md mx-auto">
                 <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-amber-400 rounded-tl-xl -mt-1 -ml-1" />
                 <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-amber-400 rounded-tr-xl -mt-1 -mr-1" />
                 <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-amber-400 rounded-bl-xl -mb-1 -ml-1" />
                 <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-amber-400 rounded-br-xl -mb-1 -mr-1" />
                 <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-amber-400/70 to-transparent shadow-[0_0_12px_rgba(245,158,11,0.8)] animate-pulse" />
                 <div className="absolute bottom-4 px-3 py-1 rounded-full bg-navy-950/80 backdrop-blur-md border border-white/10 text-[10px] text-amber-300 font-medium">
-                  Align commodity package within frame
+                  पैकेट को चौखट के भीतर रखें • Align package inside frame
                 </div>
               </div>
             )}
@@ -628,9 +755,15 @@ export const Scanner: React.FC = () => {
         {/* Top App Bar */}
         <div className="pointer-events-auto bg-gradient-to-b from-navy-950/95 via-navy-950/80 to-transparent px-4 pt-3 pb-2 flex items-center justify-between">
           <button
-            onClick={() => navigate(`/inspector/inspections/${id}/summary`)}
-            className="w-9 h-9 rounded-xl bg-navy-900/80 hover:bg-white/15 backdrop-blur-md border border-white/15 flex items-center justify-center text-white transition active:scale-95 shadow-md"
-            aria-label="Cancel scan and return to inspection summary"
+            onClick={() => {
+              if (cart.length > 0) {
+                navigate('/consumer/summary');
+              } else {
+                navigate('/');
+              }
+            }}
+            className="w-9 h-9 rounded-xl bg-navy-900/80 hover:bg-white/15 backdrop-blur-md border border-white/15 flex items-center justify-center text-white transition active:scale-95 shadow-md cursor-pointer"
+            aria-label="Cancel scan"
             title="Cancel / Close"
           >
             <X className="w-4 h-4" />
@@ -666,8 +799,20 @@ export const Scanner: React.FC = () => {
             </button>
           </div>
 
-          {/* Right Controls (Camera Mode only) */}
+          {/* Right Controls: Finish Inspection button (if cart > 0) + Camera Mode Controls */}
           <div className="flex items-center gap-1.5 shrink-0">
+            {cart.length > 0 && (
+              <button
+                onClick={() => navigate('/consumer/summary')}
+                className="py-1.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-1.5 transition active:scale-95 shadow-md shadow-purple-900/30 cursor-pointer"
+                title="सभी जाँचे गए उत्पाद देखें"
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">जाँच पूर्ण करें ({cart.length})</span>
+                <span className="sm:hidden">({cart.length})</span>
+              </button>
+            )}
+
             {scanMode === 'camera' && !isPreviewMode && (
               <>
                 {/* Stop / Resume Camera Button */}
@@ -687,13 +832,11 @@ export const Scanner: React.FC = () => {
 
                 <button
                   onClick={toggleMirror}
-                  className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold flex items-center gap-1.5 backdrop-blur-md shadow-lg transition active:scale-95 ${
+                  className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold flex items-center gap-1.5 backdrop-blur-md shadow-lg transition active:scale-95 cursor-pointer ${
                     isMirrored
                       ? 'bg-amber-500/25 text-amber-300 border-amber-500/50'
                       : 'bg-white/10 text-slate-300 border-white/15'
                   }`}
-                  aria-label={isMirrored ? 'Turn camera mirroring off' : 'Turn camera mirroring on'}
-                  aria-pressed={isMirrored}
                   title={isMirrored ? 'Mirror: ON' : 'Mirror: OFF'}
                 >
                   <FlipHorizontal className="w-3.5 h-3.5" />
@@ -703,8 +846,7 @@ export const Scanner: React.FC = () => {
                 {hasMultipleCameras && (
                   <button
                     onClick={toggleFacingMode}
-                    className="p-1.5 rounded-xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 flex items-center justify-center text-slate-200 transition active:scale-95 shadow-lg"
-                    aria-label="Switch between front and rear cameras"
+                    className="p-1.5 rounded-xl bg-white/10 hover:bg-white/15 backdrop-blur-md border border-white/15 flex items-center justify-center text-slate-200 transition active:scale-95 shadow-lg cursor-pointer"
                     title="Switch Camera"
                   >
                     <SwitchCamera className="w-3.5 h-3.5 text-emerald-400" />
@@ -718,7 +860,7 @@ export const Scanner: React.FC = () => {
         {/* Floating Step Progress Pill */}
         <div className="pointer-events-auto px-4 pt-1 max-w-md mx-auto flex flex-col items-center gap-1.5">
           <div className="flex items-center justify-between w-full bg-navy-950/85 backdrop-blur-md border border-white/15 rounded-2xl px-3 py-1.5 shadow-xl">
-            {GUIDE_STEPS.map((step, idx) => {
+            {guideSteps.map((step, idx) => {
               const isDone = idx < currentStepIdx;
               const isCurrent = idx === currentStepIdx;
               return (
@@ -747,7 +889,7 @@ export const Scanner: React.FC = () => {
                       {step.stepLabel.split(': ')[1]}
                     </span>
                   </div>
-                  {idx < GUIDE_STEPS.length - 1 && (
+                  {idx < guideSteps.length - 1 && (
                     <div
                       className={`h-0.5 flex-1 mx-1 rounded-full ${
                         idx < currentStepIdx ? 'bg-emerald-500/60' : 'bg-white/10'
@@ -821,14 +963,14 @@ export const Scanner: React.FC = () => {
                     className="flex-1 py-3.5 px-3 bg-navy-900 hover:bg-navy-800 text-amber-400 border border-amber-400/30 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-md transition active:scale-95 cursor-pointer"
                   >
                     <PlusCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>अगला उत्पाद • Scan Another (Background AI)</span>
+                    <span>अगला सामान • Scan Next (Background AI)</span>
                   </button>
                   <button
                     onClick={handleFinalSubmitDemo}
                     className="flex-1 py-3.5 px-4 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-navy-950 font-extrabold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-1.5 shadow-[0_4px_20px_rgba(245,158,11,0.4)] transition-all active:scale-[0.98] cursor-pointer"
                   >
                     <Zap className="w-4 h-4 fill-navy-950 shrink-0" />
-                    <span>समीक्षा व अंतिम जमा • Review & Submit →</span>
+                    <span>जाँच पूर्ण करें • Complete & Submit →</span>
                   </button>
                 </div>
               ) : (
@@ -837,7 +979,7 @@ export const Scanner: React.FC = () => {
                   className="flex-1 py-3.5 px-5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-navy-950 font-extrabold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(245,158,11,0.4)] transition-all active:scale-[0.98] cursor-pointer"
                 >
                   <span>
-                    आगे बढ़ें • Next: {GUIDE_STEPS[currentStepIdx + 1].stepLabel.split(': ')[1]} ({currentStepIdx + 2}/3)
+                    आगे बढ़ें • Next: {guideSteps[currentStepIdx + 1].stepLabel.split(': ')[1]} ({currentStepIdx + 2}/3)
                   </span>
                   <ArrowRight className="w-4 h-4 shrink-0" />
                 </button>
@@ -862,7 +1004,7 @@ export const Scanner: React.FC = () => {
                 <button
                   onClick={handleRetake}
                   disabled={isAnalyzing}
-                  className="flex-1 py-3 bg-white/10 hover:bg-white/15 text-slate-100 font-semibold text-xs rounded-xl border border-white/10 flex items-center justify-center gap-1.5 transition active:scale-95 disabled:opacity-50"
+                  className="flex-1 py-3 bg-white/10 hover:bg-white/15 text-slate-100 font-semibold text-xs rounded-xl border border-white/10 flex items-center justify-center gap-1.5 transition active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
                   <RotateCcw className="w-4 h-4 text-amber-400" />
                   <span>Retake • पुनः लें</span>
@@ -875,21 +1017,21 @@ export const Scanner: React.FC = () => {
                       className="flex-1 py-3 bg-navy-900 hover:bg-navy-800 text-amber-400 border border-amber-400/30 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-md transition active:scale-95 cursor-pointer"
                     >
                       <PlusCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span>अगला उत्पाद • Scan Next (Background)</span>
+                      <span>अगला सामान • Scan Next (Background)</span>
                     </button>
                     <button
                       onClick={handleFinalSubmitCamera}
                       className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-navy-950 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_20px_rgba(245,158,11,0.35)] transition active:scale-95 cursor-pointer"
                     >
                       <Zap className="w-4 h-4 text-slate-950 fill-slate-950 shrink-0" />
-                      <span>अंतिम समीक्षा • Review & Submit →</span>
+                      <span>जाँच पूर्ण करें • Complete & Submit →</span>
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={handleNextStepCamera}
                     disabled={isAnalyzing}
-                    className="flex-[1.8] py-3 bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-navy-950 font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.35)] transition active:scale-95"
+                    className="flex-[1.8] py-3 bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-400 hover:to-emerald-300 text-navy-950 font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.35)] transition active:scale-95 cursor-pointer"
                   >
                     <span>Keep → Step {currentStepIdx + 2}</span>
                     <ArrowRight className="w-4 h-4 text-slate-950" />
@@ -924,7 +1066,7 @@ export const Scanner: React.FC = () => {
                 onClick={toggleCameraPause}
                 className={`w-14 h-14 border rounded-xl flex flex-col items-center justify-center transition active:scale-95 shadow-md shrink-0 cursor-pointer ${
                   isCameraPaused
-                    ? 'bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-500/40 text-emerald-300'
+                    ? 'bg-emerald-600/30 hover:bg-emerald-600/40 border-emerald-500/50 text-emerald-300 animate-pulse'
                     : 'bg-red-600/20 hover:bg-red-600/30 border-red-500/40 text-red-300'
                 }`}
                 title={isCameraPaused ? 'कैमरा चालू करें • Resume Camera' : 'कैमरा रोकें • Stop Camera'}
@@ -961,7 +1103,7 @@ export const Scanner: React.FC = () => {
                     ? 'कैमरा बंद है • Camera Paused'
                     : isLastStep
                     ? 'Capture & Analyze (Step 3/3)'
-                    : `Snap Step ${currentStepIdx + 1}: ${GUIDE_STEPS[currentStepIdx].stepLabel.split(': ')[1]}`}
+                    : `Snap Step ${currentStepIdx + 1}: ${guideSteps[currentStepIdx].stepLabel.split(': ')[1]}`}
                 </span>
               </button>
             </div>
@@ -969,7 +1111,7 @@ export const Scanner: React.FC = () => {
         </div>
       </div>
 
-      {/* ══ FLOATING BACKGROUND AI TASKS INDICATOR ══════════════════════════ */}
+      {/* ══ BACKGROUND AI TASKS INDICATOR ══════════════════════════ */}
       {(runningTasks.length > 0 || bgNotification) && (
         <div className="absolute top-20 right-4 z-40 flex items-center gap-2 px-3.5 py-2 bg-navy-900/95 border border-amber-400/40 rounded-2xl shadow-2xl backdrop-blur-md text-xs font-bold text-amber-300 animate-in fade-in slide-in-from-top-2">
           <Clock className="w-4 h-4 text-amber-400 animate-spin shrink-0" />
@@ -982,7 +1124,7 @@ export const Scanner: React.FC = () => {
         isOpen={showCircleLoader}
         tasks={runningTasks}
         title="AI विश्लेषण पूर्ण हो रहा है..."
-        subtitle="कृपया प्रतीक्षा करें, पृष्ठभूमि में सभी स्कैन किए गए पैकेजों का OCR व नियम सत्यापन पूर्ण किया जा रहा है।"
+        subtitle="कृपया प्रतीक्षा करें, पृष्ठभूमि में सभी जाँचे गए सामानों का OCR व मूल्य सत्यापन पूर्ण किया जा रहा है।"
       />
     </div>
   );

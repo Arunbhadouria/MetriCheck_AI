@@ -29,6 +29,34 @@ export const STATE_CODES: Record<string, string> = {
   'Uttarakhand': 'UK'
 };
 
+export interface CitizenComplaint {
+  id: string;
+  trackingId: string;
+  productName: string;
+  brand?: string;
+  barcode?: string;
+  printedMrp: number;
+  chargedPrice?: number;
+  expiryDate?: string;
+  violations: string[];
+  shopName: string;
+  shopAddress?: string;
+  district: string;
+  state: string;
+  zone: string;
+  latitude?: number;
+  longitude?: number;
+  photoUrl?: string;
+  consumerName?: string;
+  consumerPhone?: string;
+  status: 'SUBMITTED' | 'ASSIGNED' | 'INVESTIGATING' | 'NOTICE_ISSUED' | 'RESOLVED';
+  assignedOfficerName?: string;
+  assignedOfficerEmpId?: string;
+  officerRemarks?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface DBData {
   users: User[];
   inspections: Inspection[];
@@ -39,6 +67,7 @@ interface DBData {
   cases: Case[];
   auditEvents: AuditEvent[];
   assets: ImageAsset[];
+  complaints: CitizenComplaint[];
 }
 
 const resolveStorageDir = (): string => {
@@ -254,7 +283,60 @@ const INITIAL_DATA: DBData = {
       createdAt: '2026-09-06T08:18:00.000Z'
     }
   ],
-  assets: []
+  assets: [],
+  complaints: [
+    {
+      id: 'griv_001',
+      trackingId: 'LM-CITIZEN-2026-9041',
+      productName: 'Lays Classic Salted Potato Chips 50g',
+      brand: 'Lays / PepsiCo',
+      barcode: '8901491101831',
+      printedMrp: 20,
+      chargedPrice: 25,
+      expiryDate: '2026-11-30',
+      violations: ['DUAL_MRP_STICKER', 'SECTION_36_OVERCHARGING'],
+      shopName: 'Gupta Sweets & Daily Needs',
+      shopAddress: 'Shop 14, Opposite Bus Stand, Vijay Nagar, Indore',
+      district: 'Indore',
+      state: 'Madhya Pradesh',
+      zone: 'Zone 08 — Vijay Nagar',
+      latitude: 22.7533,
+      longitude: 75.8937,
+      consumerName: 'Rahul Sharma',
+      consumerPhone: '+91 98260 12345',
+      status: 'INVESTIGATING',
+      assignedOfficerName: 'Amit Verma',
+      assignedOfficerEmpId: 'LM-MP-0421',
+      officerRemarks: 'Notice under Sec 36 drafted. Physical verification scheduled.',
+      createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
+      updatedAt: new Date(Date.now() - 3600000 * 2).toISOString()
+    },
+    {
+      id: 'griv_002',
+      trackingId: 'LM-CITIZEN-2026-8812',
+      productName: 'Amul Taaza Homogenised Toned Milk 1L',
+      brand: 'Amul',
+      barcode: '8901262010054',
+      printedMrp: 54,
+      chargedPrice: 58,
+      expiryDate: '2026-09-24',
+      violations: ['SECTION_36_OVERCHARGING'],
+      shopName: 'Krishna Dairy & Cold Drinks',
+      shopAddress: 'Near Chappan Dukan, New Palasia, Indore',
+      district: 'Indore',
+      state: 'Madhya Pradesh',
+      zone: 'Zone 08 — Vijay Nagar',
+      latitude: 22.7244,
+      longitude: 75.8839,
+      consumerName: 'Pooja Verma',
+      consumerPhone: '+91 98261 54321',
+      status: 'SUBMITTED',
+      assignedOfficerName: 'Amit Verma',
+      assignedOfficerEmpId: 'LM-MP-0421',
+      createdAt: new Date(Date.now() - 3600000 * 1).toISOString(),
+      updatedAt: new Date(Date.now() - 3600000 * 1).toISOString()
+    }
+  ]
 };
 
 export interface OtpChallenge {
@@ -284,6 +366,9 @@ export class DBStore {
         this.data = JSON.parse(raw);
         if (!this.data.assets) {
           this.data.assets = [];
+        }
+        if (!this.data.complaints || this.data.complaints.length === 0) {
+          this.data.complaints = INITIAL_DATA.complaints;
         }
       } catch (err) {
         this.data = INITIAL_DATA;
@@ -739,6 +824,96 @@ export class DBStore {
       pendingSync: inspections.filter(i => i.syncStatus !== 'SYNCED').length,
       recentInspections: populatedInspections
     };
+  }
+
+  // ── CITIZEN GRIEVANCES / COMPLAINTS ────────────────────────────────────────
+  public getComplaints(filter?: { zone?: string; district?: string; state?: string; phone?: string }): CitizenComplaint[] {
+    let complaints = this.data.complaints || [];
+    if (filter?.phone) {
+      const cleanPhone = filter.phone.replace(/\D/g, '');
+      complaints = complaints.filter(c => {
+        if (!c.consumerPhone) return false;
+        const cPhone = c.consumerPhone.replace(/\D/g, '');
+        return cPhone.includes(cleanPhone) || cleanPhone.includes(cPhone);
+      });
+    }
+    if (filter?.zone) {
+      const zLow = filter.zone.toLowerCase();
+      complaints = complaints.filter(c => c.zone?.toLowerCase().includes(zLow) || zLow.includes(c.zone?.toLowerCase() || ''));
+    }
+    if (filter?.district) {
+      complaints = complaints.filter(c => c.district?.toLowerCase() === filter.district?.toLowerCase());
+    }
+    if (filter?.state) {
+      complaints = complaints.filter(c => c.state?.toLowerCase() === filter.state?.toLowerCase());
+    }
+    return complaints.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  public getComplaintByTrackingId(trackingId: string): CitizenComplaint | undefined {
+    return (this.data.complaints || []).find(c => c.trackingId.toLowerCase() === trackingId.toLowerCase().trim());
+  }
+
+  public getComplaintById(id: string): CitizenComplaint | undefined {
+    return (this.data.complaints || []).find(c => c.id === id);
+  }
+
+  public createComplaint(data: Partial<CitizenComplaint>): CitizenComplaint {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    const trackingId = `LM-CITIZEN-${new Date().getFullYear()}-${randomSuffix}`;
+    const id = `griv_${Date.now()}`;
+    
+    const newComplaint: CitizenComplaint = {
+      id,
+      trackingId,
+      productName: data.productName || 'Unlabeled Package',
+      brand: data.brand || 'Unknown',
+      barcode: data.barcode,
+      printedMrp: Number(data.printedMrp) || 0,
+      chargedPrice: data.chargedPrice ? Number(data.chargedPrice) : undefined,
+      expiryDate: data.expiryDate,
+      violations: data.violations || ['SECTION_36_OVERCHARGING'],
+      shopName: data.shopName || 'Local Retailer',
+      shopAddress: data.shopAddress,
+      district: data.district || 'Indore',
+      state: data.state || 'Madhya Pradesh',
+      zone: data.zone || 'Zone 08 — Vijay Nagar',
+      latitude: data.latitude,
+      longitude: data.longitude,
+      photoUrl: data.photoUrl,
+      consumerName: data.consumerName,
+      consumerPhone: data.consumerPhone,
+      status: 'SUBMITTED',
+      assignedOfficerName: 'Amit Verma',
+      assignedOfficerEmpId: 'LM-MP-0421',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    if (!this.data.complaints) this.data.complaints = [];
+    this.data.complaints.unshift(newComplaint);
+    this.save();
+    return newComplaint;
+  }
+
+  public updateComplaintStatus(
+    id: string,
+    status: CitizenComplaint['status'],
+    officerRemarks?: string,
+    officerName?: string,
+    officerEmpId?: string
+  ): CitizenComplaint | null {
+    const complaint = this.getComplaintById(id);
+    if (!complaint) return null;
+
+    complaint.status = status;
+    if (officerRemarks) complaint.officerRemarks = officerRemarks;
+    if (officerName) complaint.assignedOfficerName = officerName;
+    if (officerEmpId) complaint.assignedOfficerEmpId = officerEmpId;
+    complaint.updatedAt = new Date().toISOString();
+
+    this.save();
+    return complaint;
   }
 }
 

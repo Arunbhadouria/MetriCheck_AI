@@ -154,7 +154,7 @@ export const ScanResult: React.FC = () => {
     <div className="gov-page text-base-content pb-24">
       <Header title="समीक्षा व क्रेडिट स्कोर • AI Compliance Review" />
 
-      <div className="max-w-xl mx-auto p-4 md:p-6 space-y-4">
+      <div className="max-w-xl lg:max-w-4xl xl:max-w-5xl mx-auto p-4 md:p-6 space-y-5">
         {/* Product Identity Card */}
         <div className="gov-card">
           <div className="card-body p-4 sm:p-5 flex flex-row items-center justify-between gap-3">
@@ -230,7 +230,7 @@ export const ScanResult: React.FC = () => {
             विश्लेषण तुलना • Dual Inspection Breakdown
           </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 lg:gap-5">
             {/* LEFT COLUMN: 🟢 Compliant Declarations */}
             <div className="gov-card border-success/30">
               <div className="card-body p-3.5 space-y-2.5">
