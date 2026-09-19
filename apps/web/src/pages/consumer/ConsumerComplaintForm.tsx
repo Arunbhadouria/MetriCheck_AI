@@ -115,16 +115,10 @@ export const ConsumerComplaintForm: React.FC = () => {
     };
 
     try {
-      const response = await fetch('/api/v1/complaints', {
+      const created = await fetchApi<any>('/complaints', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data?.error?.message || 'Failed to submit complaint');
-      }
-      const created = data.data;
       try {
         const rawExisting = localStorage.getItem('metricheck_citizen_complaints');
         const existingComplaints = rawExisting ? JSON.parse(rawExisting) : [];

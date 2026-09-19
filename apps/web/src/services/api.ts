@@ -1,4 +1,10 @@
-const API_BASE = '/api/v1';
+const envApi = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
+export const API_BASE = envApi ? envApi.replace(/\/+$/, '') : '/api/v1';
+
+export function getFullApiUrl(endpoint: string): string {
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  return `${API_BASE}${cleanEndpoint}`;
+}
 
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const officerToken = localStorage.getItem('metricheck_token');
@@ -12,7 +18,8 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     ...((options.headers as Record<string, string>) || {})
   };
 
-  let url = `${API_BASE}${endpoint}`;
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  let url = `${API_BASE}${cleanEndpoint}`;
   if (!officerToken && citizenToken && endpoint === '/complaints') {
     try {
       const citizen = JSON.parse(localStorage.getItem('metricheck_citizen_user') || '{}');

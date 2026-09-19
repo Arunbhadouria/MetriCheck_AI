@@ -4,6 +4,7 @@ import {
   Search, ShieldCheck, CheckCircle2, Clock, AlertTriangle, ArrowLeft,
   Store, MapPin, Scale, UserCheck, FileText, Share2, Copy, Check, RefreshCw
 } from 'lucide-react';
+import { getFullApiUrl } from '../../services/api';
 
 interface ComplaintRecord {
   id: string;
@@ -44,7 +45,7 @@ export const ConsumerGrievanceTracker: React.FC = () => {
     setNotFound(false);
 
     try {
-      const res = await fetch(`/api/v1/complaints/track/${encodeURIComponent(id.trim())}`);
+      const res = await fetch(getFullApiUrl(`/complaints/track/${encodeURIComponent(id.trim())}`));
       const json = await res.json();
       if (res.ok && json.data) {
         setComplaint(json.data);
@@ -66,7 +67,7 @@ export const ConsumerGrievanceTracker: React.FC = () => {
 
       // Real-time background sync every 4 seconds so officer updates reflect immediately
       const timer = setInterval(() => {
-        fetch(`/api/v1/complaints/track/${encodeURIComponent(initialId.trim())}`)
+        fetch(getFullApiUrl(`/complaints/track/${encodeURIComponent(initialId.trim())}`))
           .then(res => res.json())
           .then(json => {
             if (json?.data) {

@@ -75,7 +75,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Google Fonts & Static CDN Resources: Cache-first
+  // Google Fonts & Static CDN Resources: Cache-first with fallback
   if (url.origin.includes('fonts.googleapis.com') || url.origin.includes('fonts.gstatic.com')) {
     event.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {
@@ -83,12 +83,12 @@ self.addEventListener('fetch', (event) => {
         if (cached) return cached;
         try {
           const networkResponse = await fetch(request);
-          if (networkResponse.status === 200) {
+          if (networkResponse && networkResponse.status === 200) {
             cache.put(request, networkResponse.clone());
           }
           return networkResponse;
         } catch (err) {
-          return cached;
+          return cached || new Response('', { status: 408, statusText: 'Font offline' });
         }
       })
     );
@@ -100,15 +100,16 @@ self.addEventListener('fetch', (event) => {
     caches.open(CACHE_NAME).then(async (cache) => {
       const cachedResponse = await cache.match(request);
       
-      const fetchPromise = fetch(request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          cache.put(request, networkResponse.clone());
-        }
-        return networkResponse;
-      }).catch((err) => {
-        // Network failed (offline); cachedResponse will be returned
-        return null;
-      });
+      const fetchPromise = fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            cache.put(request, networkResponse.clone());
+          }
+          return networkResponse;
+        })
+        .catch((err) => {
+          return cachedResponse || new Response('', { status: 504, statusText: 'Asset offline' });
+        });
 
       return cachedResponse || fetchPromise;
     })
