@@ -57,6 +57,20 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(UPLOADS_DIR));
 
+// Path normalizer: transparently support endpoints requested without /api/v1 prefix (e.g. /auth/login)
+app.use((req, res, next) => {
+  if (
+    !req.url.startsWith('/api/v1') &&
+    !req.url.startsWith('/uploads') &&
+    req.url !== '/health' &&
+    req.url !== '/'
+  ) {
+    const cleanPath = req.url.startsWith('/') ? req.url : `/${req.url}`;
+    req.url = `/api/v1${cleanPath}`;
+  }
+  next();
+});
+
 // Auth Middleware
 const authenticateToken = (req: any, res: Response, next: any) => {
   const authHeader = req.headers['authorization'];

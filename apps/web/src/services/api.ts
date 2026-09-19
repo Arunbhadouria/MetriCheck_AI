@@ -1,8 +1,17 @@
-const envApi = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
-export const API_BASE = envApi ? envApi.replace(/\/+$/, '') : '/api/v1';
+const rawEnvApi = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim().replace(/\/+$/, '');
+
+export const API_BASE = (() => {
+  if (!rawEnvApi) return '/api/v1';
+  if (rawEnvApi.endsWith('/api/v1')) return rawEnvApi;
+  if (rawEnvApi.endsWith('/api')) return `${rawEnvApi}/v1`;
+  return `${rawEnvApi}/api/v1`;
+})();
 
 export function getFullApiUrl(endpoint: string): string {
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  let cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  if (cleanEndpoint.startsWith('/api/v1/')) {
+    cleanEndpoint = cleanEndpoint.replace('/api/v1', '');
+  }
   return `${API_BASE}${cleanEndpoint}`;
 }
 
@@ -18,7 +27,10 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     ...((options.headers as Record<string, string>) || {})
   };
 
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  let cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  if (cleanEndpoint.startsWith('/api/v1/')) {
+    cleanEndpoint = cleanEndpoint.replace('/api/v1', '');
+  }
   let url = `${API_BASE}${cleanEndpoint}`;
   if (!officerToken && citizenToken && endpoint === '/complaints') {
     try {
