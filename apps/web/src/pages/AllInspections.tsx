@@ -7,7 +7,7 @@ import {
   UserCheck, Plus, X, ArrowUpDown, ChevronLeft, Copy, Check,
   MessageSquareWarning, ExternalLink, ShieldAlert, Phone
 } from 'lucide-react';
-import { fetchApi } from '../services/api';
+import { fetchApi, getFullApiUrl } from '../services/api';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -639,7 +639,7 @@ export const AllInspections: React.FC = () => {
 
                     <button
                       type="button"
-                      onClick={() => window.open(`/api/v1/inspections/${insp.id}/pdf`, '_blank')}
+                      onClick={() => window.open(getFullApiUrl(`/inspections/${insp.id}/pdf`), '_blank')}
                       className="py-2.5 px-4 bg-navy-900 hover:bg-navy-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md shadow-navy-950/25 shrink-0 cursor-pointer"
                       title="Download Statutory Form IV PDF"
                     >

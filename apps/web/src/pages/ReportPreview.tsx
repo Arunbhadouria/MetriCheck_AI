@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Download, CheckCircle, XCircle, Send, AlertTriangle, ShieldCheck, Scale, Loader2, MapPin, Store, UserCheck, FileCheck2, ExternalLink } from 'lucide-react';
-import { fetchApi } from '../services/api';
+import { fetchApi, getFullApiUrl } from '../services/api';
 import { aiBackgroundManager, useAiBackgroundTasks } from '../services/aiBackgroundManager';
 import { AiProcessingCircleLoader } from '../components/AiProcessingCircleLoader';
 
@@ -44,7 +44,7 @@ export const ReportPreview: React.FC = () => {
   };
 
   const handleDownloadPDF = () => {
-    window.open(`/api/v1/inspections/${id}/pdf`, '_blank');
+    window.open(getFullApiUrl(`/inspections/${id}/pdf`), '_blank');
   };
 
   const products = inspection?.products || [];

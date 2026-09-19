@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { CheckCircle2, Download, Share2, PlusCircle, LayoutDashboard, ShieldCheck, MapPin, Store, UserCheck, Copy, Check } from 'lucide-react';
-import { fetchApi } from '../services/api';
+import { fetchApi, getFullApiUrl } from '../services/api';
 
 export const ReportSubmitted: React.FC = () => {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export const ReportSubmitted: React.FC = () => {
   }, [id]);
 
   const handleDownloadPDF = () => {
-    window.open(`/api/v1/inspections/${id}/pdf`, '_blank');
+    window.open(getFullApiUrl(`/inspections/${id}/pdf`), '_blank');
   };
 
   const handleCopyLink = () => {
