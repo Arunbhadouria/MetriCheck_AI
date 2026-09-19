@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   X, LayoutDashboard, Scan, FileSpreadsheet, ShieldCheck,
   LogOut, ChevronRight, UserCheck, ExternalLink, HelpCircle,
-  Building2, MapPin, BookOpen, Home, Clock, Scale, ShoppingBag
+  Building2, MapPin, BookOpen, Home, Clock, Scale, ShoppingBag,
+  Download, Smartphone
 } from 'lucide-react';
 
 interface NavigationDrawerProps {
@@ -113,6 +114,16 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
   const handleNavigate = (path: string) => {
     onClose();
     navigate(path);
+  };
+
+  const isStandalone = typeof window !== 'undefined' && (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true
+  );
+
+  const handleInstallApp = () => {
+    onClose();
+    window.dispatchEvent(new Event('open-pwa-install'));
   };
 
   const handleLogout = () => {
@@ -326,7 +337,20 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
           </div>
 
           {/* Drawer Footer */}
-          <div className="p-3.5 bg-navy-900/90 border-t border-white/10 shrink-0">
+          <div className="p-3.5 bg-navy-900/90 border-t border-white/10 shrink-0 space-y-2">
+            {!isStandalone && (
+              <button
+                onClick={handleInstallApp}
+                className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-amber-400/10 hover:from-amber-500/30 hover:to-amber-400/20 border border-amber-500/30 text-amber-300 hover:text-amber-200 text-xs font-bold flex items-center justify-between transition cursor-pointer shadow-xs"
+              >
+                <div className="flex items-center gap-2">
+                  <Download className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>ऐप इंस्टॉल करें • Install App</span>
+                </div>
+                <span className="badge badge-xs bg-amber-500 text-navy-950 font-black text-[9px] px-1.5 py-0.5">PWA</span>
+              </button>
+            )}
+
             {isConsumerRoute ? (
               citizenUser ? (
                 <button

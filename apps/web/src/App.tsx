@@ -20,6 +20,7 @@ import { ConsumerComplaintForm } from './pages/consumer/ConsumerComplaintForm';
 import { ConsumerGrievanceTracker } from './pages/consumer/ConsumerGrievanceTracker';
 import { ConsumerAuth } from './pages/consumer/ConsumerAuth';
 import { ConsumerDashboard } from './pages/consumer/ConsumerDashboard';
+import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 
 import { RoleSwitchModal } from './components/RoleSwitchModal';
 import { useNavigate } from 'react-router-dom';
@@ -203,6 +204,7 @@ export const App: React.FC = () => {
         <Route path="/inspector/inspections/:id/submitted" element={<InspectorProtectedRoute><ReportSubmitted /></InspectorProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <PwaInstallPrompt />
     </BrowserRouter>
   );
 };
