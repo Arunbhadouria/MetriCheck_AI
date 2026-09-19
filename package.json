@@ -21,6 +21,7 @@
     "db:seed": "npm run db:seed --workspace=apps/api"
   },
   "devDependencies": {
+    "@types/node": "^20.11.24",
     "concurrently": "^10.0.5",
     "daisyui": "^5.7.40",
     "shadcn": "^4.21.0",
