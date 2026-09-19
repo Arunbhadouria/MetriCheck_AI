@@ -24,9 +24,11 @@ export async function initializeDatabase(): Promise<DatabaseStatus> {
   }
 
   try {
+    const isLocalhost = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
     pool = new Pool({
       connectionString,
-      connectionTimeoutMillis: 3000
+      connectionTimeoutMillis: 5000,
+      ssl: isLocalhost ? false : { rejectUnauthorized: false }
     });
 
     const client = await pool.connect();

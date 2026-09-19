@@ -1,0 +1,42 @@
+# MetriCheck AI — Render Blueprint Configuration
+# Deploy with 1-click at https://dashboard.render.com/blueprints
+services:
+  # 1. API Gateway Service (Node.js Express + Monorepo)
+  - type: web
+    name: metricheck-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run build:types && npm run build:rules && npm run build --workspace=apps/api
+    startCommand: node apps/api/dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: AI_SERVICE_URL
+        fromService:
+          type: web
+          name: metricheck-ai
+          property: host
+
+  # 2. AI Perception Service (Python FastAPI)
+  - type: web
+    name: metricheck-ai
+    runtime: python
+    plan: free
+    region: oregon
+    rootDir: apps/ai-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DEMO_MODE
+        value: "false"
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: GEMINI_API_KEY
+        sync: false
