@@ -599,40 +599,15 @@ export const ConsumerScanner: React.FC = () => {
         formData.append('images', blob, `capture_${idx + 1}.webp`);
       });
 
-      let analyzedProduct: ScannedConsumerProduct;
-      try {
-        analyzedProduct = await fetchApi<ScannedConsumerProduct>('/consumer/analyze', {
-          method: 'POST',
-          body: formData
-        });
-      } catch (apiErr: any) {
-        console.warn('Backend analyze timeout or error, generating immediate verified package:', apiErr);
-        const previewUrl = capturedDataUrl || (allBlobs[0] ? URL.createObjectURL(allBlobs[0]) : '');
-        analyzedProduct = {
-          id: `consumer_prod_${Date.now()}`,
-          name: 'स्कैन किया गया पैकेट • Scanned Package',
-          brand: 'Packaged Commodity',
-          barcode: '890' + Math.floor(1000000000 + Math.random() * 9000000000),
-          printedMrp: 0,
-          expiryDate: 'Not Declared',
-          mfgDate: 'Not Declared',
-          netWeight: '1 Standard Unit',
-          manufacturer: 'Registered Packaged Commodity Packer',
-          customerCare: '1800-11-4000 / helpdesk@consumeraffairs.gov.in',
-          violations: [
-            'Maximum Retail Price (MRP) declaration could not be verified automatically.',
-            'Net quantity declaration requires manual visual confirmation.'
-          ],
-          unitSalePrice: '₹0.00',
-          status: 'VIOLATION',
-          stepImages: { front: previewUrl }
-        };
-      }
-
+      const analyzedProduct = await fetchApi<ScannedConsumerProduct>('/consumer/analyze', {
+        method: 'POST',
+        body: formData
+      });
       saveProductAndNavigate(analyzedProduct);
     } catch (err: any) {
       console.error('Real image consumer analysis error:', err);
-      setErrorMessage(err.message || 'पैकेट के विश्लेषण में त्रुटि हुई। कृपया पुनः फोटो लें।');
+      setErrorMessage(err.message || 'पैकेट के विश्लेषण में त्रुटि हुई। कृपया दोबारा फोटो लें या नेटवर्क जाँचें।');
+      setCameraState('ERROR');
     } finally {
       setShowCircleLoader(false);
     }
@@ -1181,28 +1156,6 @@ export const ConsumerScanner: React.FC = () => {
         subtitle="कृपया प्रतीक्षा करें, पृष्ठभूमि में सभी जाँचे गए सामानों का OCR व मूल्य सत्यापन पूर्ण किया जा रहा है।"
         onClose={() => {
           setShowCircleLoader(false);
-          if (scanMode === 'demo') {
-            saveProductAndNavigate(activeDemoPreset.product);
-          } else if (capturedBlob || collectedBlobs.length > 0) {
-            const previewUrl = capturedDataUrl || '';
-            const fallbackProd: ScannedConsumerProduct = {
-              id: `consumer_prod_${Date.now()}`,
-              name: 'स्कैन किया गया पैकेट • Scanned Package',
-              brand: 'Packaged Commodity',
-              barcode: '890' + Math.floor(1000000000 + Math.random() * 9000000000),
-              printedMrp: 0,
-              expiryDate: 'Not Declared',
-              mfgDate: 'Not Declared',
-              netWeight: '1 Standard Unit',
-              manufacturer: 'Registered Packaged Commodity Packer',
-              customerCare: '1800-11-4000 / helpdesk@consumeraffairs.gov.in',
-              violations: ['Maximum Retail Price (MRP) declaration requires verification.'],
-              unitSalePrice: '₹0.00',
-              status: 'VIOLATION',
-              stepImages: { front: previewUrl }
-            };
-            saveProductAndNavigate(fallbackProd);
-          }
         }}
       />
     </div>

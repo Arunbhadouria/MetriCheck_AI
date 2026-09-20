@@ -125,12 +125,14 @@ const requireOfficer = (req: any, res: Response, next: any) => {
   next();
 };
 
-// Health Endpoint
-app.get('/health', (req: Request, res: Response) => {
+// Health Endpoint (accessible at /health and /api/v1/health)
+app.get(['/health', '/api/v1/health'], (req: Request, res: Response) => {
   res.json({
     status: 'ok',
     service: 'api-gateway',
     timestamp: new Date().toISOString(),
+    aiVisionConfigured: !!GEMINI_API_KEY,
+    activeModels: ['gemini-2.5-flash-lite', 'gemini-3.6-flash'],
     ruleEngineVersion: RuleEngine.getVersion(),
     database: getDatabaseStatus()
   });
@@ -666,8 +668,8 @@ Return ONLY a single valid JSON object:
       }
 
       if (parts.length > 1) {
-        // Multi-model fallback: prioritize fast flash-lite, fallback to 2.5-flash
-        const candidateModels = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+        // Multi-model fallback: prioritize fast flash-lite, fallback to 3.6-flash
+        const candidateModels = ['gemini-2.5-flash-lite', 'gemini-3.6-flash'];
         for (const modelName of candidateModels) {
           try {
             const geminiRes = await fetch(
@@ -675,7 +677,7 @@ Return ONLY a single valid JSON object:
               {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                signal: AbortSignal.timeout(12000),
+                signal: AbortSignal.timeout(18000),
                 body: JSON.stringify({
                   contents: [{ parts }],
                   generationConfig: {

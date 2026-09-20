@@ -478,15 +478,16 @@ export const Scanner: React.FC = () => {
       for (let i = 0; i < allBlobs.length; i++) {
         await uploadAsset(allBlobs[i], `camera_p${productCount + 1}_step_${i + 1}.webp`);
       }
-      await fetchApi<any>(`/inspections/${id}/analyze`, { method: 'POST' }).catch(() => {});
+      await fetchApi<any>(`/inspections/${id}/analyze`, { method: 'POST' });
       incrementProductCount(id);
 
       // Wait for all concurrent background tasks to complete
       await waitForAllTasks();
       navigate(`/inspector/inspections/${id}/review`);
     } catch (err: any) {
-      console.warn('Camera analyze error:', err);
-      navigate(`/inspector/inspections/${id}/review`);
+      console.error('Camera analyze error:', err);
+      setErrorMessage(err.message || 'पैकेज विश्लेषण में त्रुटि हुई। कृपया दोबारा प्रयास करें।');
+      setCameraState('ERROR');
     } finally {
       setShowCircleLoader(false);
     }

@@ -1,10 +1,17 @@
 const rawEnvApi = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim().replace(/\/+$/, '');
 
 export const API_BASE = (() => {
-  if (!rawEnvApi) return '/api/v1';
-  if (rawEnvApi.endsWith('/api/v1')) return rawEnvApi;
-  if (rawEnvApi.endsWith('/api')) return `${rawEnvApi}/v1`;
-  return `${rawEnvApi}/api/v1`;
+  if (rawEnvApi) {
+    if (rawEnvApi.endsWith('/api/v1')) return rawEnvApi;
+    if (rawEnvApi.endsWith('/api')) return `${rawEnvApi}/v1`;
+    return `${rawEnvApi}/api/v1`;
+  }
+  // In browser production (e.g. Vercel deployment), point directly to Render backend
+  // to avoid Vercel edge proxy 4.5MB payload limit and proxy timeouts
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'https://metricheck-api.onrender.com/api/v1';
+  }
+  return '/api/v1';
 })();
 
 export function getFullApiUrl(endpoint: string): string {
@@ -41,9 +48,10 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     } catch {}
   }
 
-  // Safety timeout: abort if server doesn't respond within 12 seconds
+  // Adaptive timeout: 45s for file uploads / AI OCR analysis, 15s for standard requests
+  const timeoutMs = isFormData || cleanEndpoint.includes('/analyze') ? 45000 : 15000;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   const signal = options.signal || controller.signal;
 
   try {
@@ -69,3 +77,4 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     clearTimeout(timeoutId);
   }
 }
+
