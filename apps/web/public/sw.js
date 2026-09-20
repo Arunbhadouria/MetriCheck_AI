@@ -1,7 +1,7 @@
 // MetriCheck AI — Service Worker
-// Version: metricheck-pwa-v1.0.0
+// Version: metricheck-pwa-v2.0.0
 
-const CACHE_NAME = 'metricheck-shell-v1';
+const CACHE_NAME = 'metricheck-shell-v2';
 
 const STATIC_SHELL_ASSETS = [
   '/',

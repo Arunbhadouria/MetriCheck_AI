@@ -92,15 +92,121 @@ const INITIAL_DATA: DBData = {
       id: 'usr_inspector_1',
       employeeId: 'LM-MP-0421',
       name: 'Amit Verma',
-      email: 'inspector@demo.local',
+      email: 'amit.verma@lm.gov.in',
+      mobileNumber: '9826012345',
       role: 'INSPECTOR',
-      department: 'M.P. Legal Metrology Department',
+      department: 'M.P. Legal Metrology Department • विधिक माप विज्ञान विभाग',
       jurisdictionState: 'Madhya Pradesh',
       jurisdictionDistrict: 'Indore',
       jurisdictionZone: 'Zone 08 — Vijay Nagar',
       active: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: '2026-01-15T09:00:00.000Z',
+      updatedAt: '2026-09-01T10:00:00.000Z'
+    },
+    {
+      id: 'usr_inspector_2',
+      employeeId: 'LM-MP-1052',
+      name: 'नेहा सक्सेना • Neha Saxena',
+      email: 'neha.saxena@lm.gov.in',
+      mobileNumber: '9826198765',
+      role: 'INSPECTOR',
+      department: 'M.P. Legal Metrology Department • विधिक माप विज्ञान विभाग',
+      jurisdictionState: 'Madhya Pradesh',
+      jurisdictionDistrict: 'Bhopal',
+      jurisdictionZone: 'Zone 02 — MP Nagar & Arera',
+      active: true,
+      createdAt: '2026-02-10T09:00:00.000Z',
+      updatedAt: '2026-09-01T10:00:00.000Z'
+    },
+    {
+      id: 'usr_inspector_3',
+      employeeId: 'LM-MP-2384',
+      name: 'विक्रमादित्य राठौर • Vikramaditya Rathore',
+      email: 'v.rathore@lm.gov.in',
+      mobileNumber: '9826311223',
+      role: 'INSPECTOR',
+      department: 'M.P. Legal Metrology Department • विधिक माप विज्ञान विभाग',
+      jurisdictionState: 'Madhya Pradesh',
+      jurisdictionDistrict: 'Ujjain',
+      jurisdictionZone: 'Zone 01 — Freeganj & Mahakal',
+      active: true,
+      createdAt: '2026-02-15T09:00:00.000Z',
+      updatedAt: '2026-09-01T10:00:00.000Z'
+    },
+    {
+      id: 'usr_inspector_4',
+      employeeId: 'LM-MP-3912',
+      name: 'सुनीता चौहान • Sunita Chouhan',
+      email: 'sunita.c@lm.gov.in',
+      mobileNumber: '9826477889',
+      role: 'INSPECTOR',
+      department: 'M.P. Legal Metrology Department • विधिक माप विज्ञान विभाग',
+      jurisdictionState: 'Madhya Pradesh',
+      jurisdictionDistrict: 'Gwalior',
+      jurisdictionZone: 'Zone 04 — Lashkar & Morar',
+      active: true,
+      createdAt: '2026-03-01T09:00:00.000Z',
+      updatedAt: '2026-09-01T10:00:00.000Z'
+    },
+    {
+      id: 'usr_inspector_5',
+      employeeId: 'LM-MP-4521',
+      name: 'मोहम्मद इरफ़ान • Mohammad Irfan',
+      email: 'm.irfan@lm.gov.in',
+      mobileNumber: '9826555443',
+      role: 'INSPECTOR',
+      department: 'M.P. Legal Metrology Department • विधिक माप विज्ञान विभाग',
+      jurisdictionState: 'Madhya Pradesh',
+      jurisdictionDistrict: 'Jabalpur',
+      jurisdictionZone: 'Zone 03 — Civil Lines & Wright Town',
+      active: true,
+      createdAt: '2026-03-12T09:00:00.000Z',
+      updatedAt: '2026-09-01T10:00:00.000Z'
+    },
+    {
+      id: 'usr_inspector_6',
+      employeeId: 'LM-MP-5120',
+      name: 'राजेश पाटीदार • Rajesh Patidar',
+      email: 'rajesh.p@lm.gov.in',
+      mobileNumber: '9826622334',
+      role: 'INSPECTOR',
+      department: 'M.P. Legal Metrology Department • विधिक माप विज्ञान विभाग',
+      jurisdictionState: 'Madhya Pradesh',
+      jurisdictionDistrict: 'Indore',
+      jurisdictionZone: 'Zone 03 — Palasia & Rajwada',
+      active: true,
+      createdAt: '2026-03-20T09:00:00.000Z',
+      updatedAt: '2026-09-01T10:00:00.000Z'
+    },
+    {
+      id: 'usr_inspector_7',
+      employeeId: 'LM-MH-0814',
+      name: 'प्रिया देशमुख • Priya Deshmukh',
+      email: 'priya.deshmukh@lm.gov.in',
+      mobileNumber: '9820044556',
+      role: 'INSPECTOR',
+      department: 'Maharashtra Legal Metrology Organization',
+      jurisdictionState: 'Maharashtra',
+      jurisdictionDistrict: 'Mumbai Suburban',
+      jurisdictionZone: 'Zone 12 — Andheri & Bandra',
+      active: true,
+      createdAt: '2026-04-01T09:00:00.000Z',
+      updatedAt: '2026-09-01T10:00:00.000Z'
+    },
+    {
+      id: 'usr_inspector_8',
+      employeeId: 'LM-DL-0391',
+      name: 'संजय भट्ट • Sanjay Bhatt',
+      email: 'sanjay.bhatt@lm.gov.in',
+      mobileNumber: '9811099887',
+      role: 'INSPECTOR',
+      department: 'Delhi Weights & Measures Department',
+      jurisdictionState: 'Delhi',
+      jurisdictionDistrict: 'Central Delhi',
+      jurisdictionZone: 'Zone 05 — Connaught Place & Karol Bagh',
+      active: true,
+      createdAt: '2026-04-15T09:00:00.000Z',
+      updatedAt: '2026-09-01T10:00:00.000Z'
     },
     {
       id: 'usr_admin_1',
@@ -370,6 +476,16 @@ export class DBStore {
         if (!this.data.complaints || this.data.complaints.length === 0) {
           this.data.complaints = INITIAL_DATA.complaints;
         }
+        // Ensure all seeded multi-zone officers exist
+        if (!this.data.users) {
+          this.data.users = INITIAL_DATA.users;
+        } else {
+          for (const initialUser of INITIAL_DATA.users) {
+            if (!this.data.users.some(u => u.employeeId.toUpperCase() === initialUser.employeeId.toUpperCase())) {
+              this.data.users.push(initialUser);
+            }
+          }
+        }
       } catch (err) {
         this.data = INITIAL_DATA;
         this.save();
@@ -621,13 +737,10 @@ export class DBStore {
   public getInspections(officerId?: string, officerEmpId?: string): Inspection[] {
     let inspections = this.data.inspections;
     if (officerId) {
-      const isDemoInspector = officerId === 'usr_inspector_1' || officerEmpId?.toUpperCase() === 'LM-MP-0421';
-      if (!isDemoInspector) {
-        inspections = this.data.inspections.filter(
-          i => i.inspectorId === officerId || 
-               (officerEmpId && (i.inspectorId === officerEmpId || i.inspectorName?.includes(officerEmpId)))
-        );
-      }
+      inspections = this.data.inspections.filter(
+        i => i.inspectorId === officerId || 
+             (officerEmpId && (i.inspectorId === officerEmpId || i.inspectorName?.includes(officerEmpId)))
+      );
     }
     return inspections.map(insp => ({
       ...insp,
@@ -787,13 +900,10 @@ export class DBStore {
     let inspections = this.data.inspections;
 
     if (officerId) {
-      const isDemoInspector = officerId === 'usr_inspector_1' || officerEmpId?.toUpperCase() === 'LM-MP-0421';
-      if (!isDemoInspector) {
-        inspections = this.data.inspections.filter(
-          i => i.inspectorId === officerId || 
-               (officerEmpId && (i.inspectorId === officerEmpId || i.inspectorName?.includes(officerEmpId)))
-        );
-      }
+      inspections = this.data.inspections.filter(
+        i => i.inspectorId === officerId || 
+             (officerEmpId && (i.inspectorId === officerEmpId || i.inspectorName?.includes(officerEmpId)))
+      );
     }
 
     const inspectionIds = new Set(inspections.map(i => i.id));
@@ -820,7 +930,7 @@ export class DBStore {
       compliant,
       nonCompliant,
       reviewRequired,
-      openCases: this.data.cases.filter(c => c.status === 'OPEN' && (!officerId || inspectionIds.has(c.inspectionId) || officerId === 'usr_inspector_1')).length,
+      openCases: this.data.cases.filter(c => c.status === 'OPEN' && (!officerId || inspectionIds.has(c.inspectionId))).length,
       pendingSync: inspections.filter(i => i.syncStatus !== 'SYNCED').length,
       recentInspections: populatedInspections
     };
@@ -831,11 +941,13 @@ export class DBStore {
     let complaints = this.data.complaints || [];
     if (filter?.phone) {
       const cleanPhone = filter.phone.replace(/\D/g, '');
-      complaints = complaints.filter(c => {
-        if (!c.consumerPhone) return false;
-        const cPhone = c.consumerPhone.replace(/\D/g, '');
-        return cPhone.includes(cleanPhone) || cleanPhone.includes(cPhone);
-      });
+      return complaints
+        .filter(c => {
+          if (!c.consumerPhone) return false;
+          const cPhone = c.consumerPhone.replace(/\D/g, '');
+          return cPhone.includes(cleanPhone) || cleanPhone.includes(cPhone);
+        })
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
     if (filter?.zone) {
       const zLow = filter.zone.toLowerCase();
@@ -914,6 +1026,39 @@ export class DBStore {
 
     this.save();
     return complaint;
+  }
+
+  // ── OFFICER DIRECTORY ──────────────────────────────────────────────────────
+  public getOfficersDirectory(filter?: {
+    state?: string;
+    district?: string;
+    zone?: string;
+    search?: string;
+  }): Array<Omit<User, 'passwordHash'>> {
+    let officers = (this.data.users || []).filter(u => u.role === 'INSPECTOR' || u.role === 'SUPERVISOR');
+
+    if (filter?.state && filter.state !== 'ALL') {
+      officers = officers.filter(u => u.jurisdictionState?.toLowerCase() === filter.state?.toLowerCase());
+    }
+    if (filter?.district && filter.district !== 'ALL') {
+      officers = officers.filter(u => u.jurisdictionDistrict?.toLowerCase() === filter.district?.toLowerCase());
+    }
+    if (filter?.zone && filter.zone !== 'ALL') {
+      const zLow = filter.zone.toLowerCase();
+      officers = officers.filter(u => u.jurisdictionZone?.toLowerCase().includes(zLow));
+    }
+    if (filter?.search) {
+      const s = filter.search.toLowerCase().trim();
+      officers = officers.filter(u => 
+        u.name.toLowerCase().includes(s) ||
+        u.employeeId.toLowerCase().includes(s) ||
+        (u.jurisdictionZone && u.jurisdictionZone.toLowerCase().includes(s)) ||
+        (u.jurisdictionDistrict && u.jurisdictionDistrict.toLowerCase().includes(s)) ||
+        (u.email && u.email.toLowerCase().includes(s))
+      );
+    }
+
+    return officers.map(({ passwordHash, ...safe }) => safe);
   }
 }
 

@@ -162,7 +162,11 @@ Perform a detailed inspection:
             response = client.models.generate_content(
                 model=model_name,
                 contents=contents,
-                config=types.GenerateContentConfig(response_mime_type="application/json", temperature=0.0),
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.0,
+                    thinking_config=types.ThinkingConfig(thinking_budget=0)
+                ),
             )
             data = json.loads(response.text)
             if isinstance(data, dict):

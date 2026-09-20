@@ -5,7 +5,7 @@ import {
   Search, RefreshCw, ChevronRight, Layers, Clock, ShieldCheck,
   AlertTriangle, CheckCircle2, FileText, Download, MapPin, Store,
   UserCheck, Plus, X, ArrowUpDown, ChevronLeft, Copy, Check,
-  MessageSquareWarning, ExternalLink, ShieldAlert, Phone
+  MessageSquareWarning, ExternalLink, ShieldAlert, Phone, Users
 } from 'lucide-react';
 import { fetchApi, getFullApiUrl } from '../services/api';
 
@@ -198,6 +198,29 @@ export const AllInspections: React.FC = () => {
       />
 
       <div className="max-w-5xl lg:max-w-6xl xl:max-w-7xl mx-auto p-4 md:p-6 space-y-5">
+        {/* Inter-Zone Information Notice */}
+        <div className="p-3.5 rounded-2xl bg-blue-50/90 border border-blue-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 font-bold">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="font-bold text-navy-950 block">अधिकारी क्षेत्राधिकार पृथक्करण • Jurisdiction Scoping Active</span>
+              <span className="text-[11px] text-slate-600">
+                आप केवल अपने अधिकृत क्षेत्र के निरीक्षण व शिकायतें देख रहे हैं। अन्य सर्किलों के डेटा हेतु संबंधित अधिकारी से संपर्क करें।
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/inspector/officers')}
+            className="btn btn-xs rounded-xl bg-navy-900 hover:bg-navy-800 text-white font-bold gap-1 text-[11px] cursor-pointer shadow-xs shrink-0 self-end sm:self-auto"
+          >
+            <Users className="w-3 h-3 text-amber-400" />
+            <span>अधिकारी निर्देशिका • Officer Directory</span>
+          </button>
+        </div>
+
         {/* ══ TOP SEARCH & FILTER BAR ════════════════════════════════════════ */}
         <div className="gov-card p-4 space-y-3">
           {/* Search Input */}

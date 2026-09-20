@@ -10,6 +10,7 @@ import { ScannedConsumerProduct } from './ConsumerScanner';
 import { voiceAi } from '../../services/voiceAi';
 import { aiBackgroundManager, useAiBackgroundTasks } from '../../services/aiBackgroundManager';
 import { AiProcessingCircleLoader } from '../../components/AiProcessingCircleLoader';
+import { appendCitizenHistory } from '../../services/consumerStorage';
 
 export const ConsumerSessionSummary: React.FC = () => {
   const navigate = useNavigate();
@@ -110,14 +111,12 @@ export const ConsumerSessionSummary: React.FC = () => {
     // Citizen is authenticated: save all cart items to history
     if (cart.length > 0) {
       try {
-        const rawHistory = localStorage.getItem('metricheck_citizen_history');
-        const existing = rawHistory ? JSON.parse(rawHistory) : [];
         const itemsToSave = cart.map(item => ({
           ...item,
           scannedAt: new Date().toISOString(),
           storeName: 'गुप्ता किराना एवं जनरल स्टोर्स, इंदौर'
         }));
-        localStorage.setItem('metricheck_citizen_history', JSON.stringify([...itemsToSave, ...existing]));
+        appendCitizenHistory(itemsToSave as any);
       } catch (e) {
         console.warn('Error saving to history', e);
       }

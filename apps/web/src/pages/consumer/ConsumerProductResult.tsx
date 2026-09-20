@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   Volume2, VolumeX, AlertTriangle, CheckCircle2, ShieldAlert, ArrowLeft,
   Scale, MessageSquare, FileWarning, RefreshCw, Send, ChevronRight, Copy, Check,
-  PlusCircle, Layers, Bookmark
+  PlusCircle, Layers, Bookmark, X
 } from 'lucide-react';
 import { voiceAi } from '../../services/voiceAi';
 import { ScannedConsumerProduct } from './ConsumerScanner';
+import { appendCitizenHistory } from '../../services/consumerStorage';
 
 export const ConsumerProductResult: React.FC = () => {
   const navigate = useNavigate();
@@ -96,14 +97,12 @@ export const ConsumerProductResult: React.FC = () => {
     // Citizen is authenticated: save to history
     if (product) {
       try {
-        const rawHistory = localStorage.getItem('metricheck_citizen_history');
-        const existing = rawHistory ? JSON.parse(rawHistory) : [];
         const itemToSave = {
           ...product,
           scannedAt: new Date().toISOString(),
           storeName: 'गुप्ता किराना एवं जनरल स्टोर्स, इंदौर'
         };
-        localStorage.setItem('metricheck_citizen_history', JSON.stringify([itemToSave, ...existing]));
+        appendCitizenHistory([itemToSave as any]);
       } catch (e) {
         console.warn('Error saving to history', e);
       }
@@ -119,6 +118,17 @@ export const ConsumerProductResult: React.FC = () => {
       return;
     }
     navigate('/consumer/complaint');
+  };
+
+  const handleCancelSession = () => {
+    voiceAi.stop();
+    const citizenUser = localStorage.getItem('metricheck_citizen_user');
+    if (citizenUser) {
+      navigate('/consumer/dashboard');
+    } else {
+      // User cancelled/exited without logging in -> start login flow
+      navigate('/consumer/auth?redirect=cancel');
+    }
   };
 
   if (!product) return null;
@@ -147,14 +157,24 @@ export const ConsumerProductResult: React.FC = () => {
               Barcode: {product.barcode}
             </p>
           </div>
-          <button
-            onClick={() => navigate('/consumer/scan')}
-            className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-400 transition active:scale-95 cursor-pointer"
-            title="Scan Another"
-            aria-label="Scan another product"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => navigate('/consumer/scan')}
+              className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-amber-400 transition active:scale-95 cursor-pointer"
+              title="Scan Another"
+              aria-label="Scan another product"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleCancelSession}
+              className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition active:scale-95 cursor-pointer"
+              title="Cancel / Exit"
+              aria-label="Cancel session"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -308,6 +328,13 @@ export const ConsumerProductResult: React.FC = () => {
                     <b>नियम 6 उल्लंघन</b>: अनिवार्य तिथि घोषणा में विसंगति पाई गई।
                   </li>
                 )}
+                {product.violations
+                  .filter(v => !['DUAL_MRP_STICKER', 'SECTION_36_OVERCHARGING', 'EXPIRED_PRODUCT', 'RULE_6_EXPIRY_BREACH'].includes(v))
+                  .map((violation, vIdx) => (
+                    <li key={vIdx} className="text-amber-950">
+                      <b>विधिक मापविज्ञान नियम</b>: {violation}
+                    </li>
+                  ))}
               </ul>
             </div>
           )}

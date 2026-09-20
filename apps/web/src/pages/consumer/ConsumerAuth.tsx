@@ -6,6 +6,12 @@ import {
   ShoppingBag, Award, AlertCircle
 } from 'lucide-react';
 import { ScannedConsumerProduct } from './ConsumerScanner';
+import {
+  appendCitizenHistory,
+  getCitizenHistory,
+  saveCitizenHistory,
+  DEMO_CITIZEN_HISTORY
+} from '../../services/consumerStorage';
 
 export const ConsumerAuth: React.FC = () => {
   const navigate = useNavigate();
@@ -49,9 +55,6 @@ export const ConsumerAuth: React.FC = () => {
         }
 
         if (productsToSave.length > 0) {
-          const existingHistoryRaw = localStorage.getItem('metricheck_citizen_history');
-          const existingHistory = existingHistoryRaw ? JSON.parse(existingHistoryRaw) : [];
-
           // Add timestamp and store name if missing
           const timestampedItems = productsToSave.map(p => ({
             ...p,
@@ -59,8 +62,7 @@ export const ConsumerAuth: React.FC = () => {
             storeName: 'गुप्ता किराना एवं जनरल स्टोर्स, इंदौर'
           }));
 
-          const updatedHistory = [...timestampedItems, ...existingHistory];
-          localStorage.setItem('metricheck_citizen_history', JSON.stringify(updatedHistory));
+          appendCitizenHistory(timestampedItems as any, user.phone);
         }
       } catch (err) {
         console.warn('Failed to persist history', err);
@@ -134,6 +136,11 @@ export const ConsumerAuth: React.FC = () => {
       verified: true,
       joinedDate: 'Sep 2026'
     };
+    // Seed demo scans exclusively for the demo user if not already present
+    const existing = getCitizenHistory(demoUser.phone);
+    if (!existing || existing.length === 0) {
+      saveCitizenHistory(DEMO_CITIZEN_HISTORY, demoUser.phone);
+    }
     finalizeAuth(demoUser);
   };
 
@@ -175,6 +182,8 @@ export const ConsumerAuth: React.FC = () => {
                 ? 'शिकायत दर्ज करने हेतु अपने नागरिक खाते में लॉगिन करें'
                 : redirectTarget === 'history'
                 ? 'स्कैन इतिहास सहेजने व डैशबोर्ड देखने हेतु लॉगिन करें'
+                : redirectTarget === 'cancel'
+                ? 'नागरिक सेवा डैशबोर्ड में प्रवेश हेतु लॉगिन करें या नया खाता बनाएं'
                 : 'उपभोक्ता संरक्षण एवं विधिक माप विज्ञान पोर्टल'}
             </p>
           </div>

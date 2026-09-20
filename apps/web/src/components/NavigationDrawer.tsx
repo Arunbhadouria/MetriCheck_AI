@@ -4,7 +4,7 @@ import {
   X, LayoutDashboard, Scan, FileSpreadsheet, ShieldCheck,
   LogOut, ChevronRight, UserCheck, ExternalLink, HelpCircle,
   Building2, MapPin, BookOpen, Home, Clock, Scale, ShoppingBag,
-  Download, Smartphone
+  Download, Smartphone, Users
 } from 'lucide-react';
 
 interface NavigationDrawerProps {
@@ -195,6 +195,12 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
       label: 'सभी निरीक्षण • All Inspections',
       path: '/inspector/inspections',
       icon: <FileSpreadsheet className="w-5 h-5 text-sky-400" />
+    },
+    {
+      id: 'officers_directory',
+      label: 'अधिकारी निर्देशिका • Officer Directory',
+      path: '/inspector/officers',
+      icon: <Users className="w-5 h-5 text-teal-400" />
     },
     {
       id: 'id_card',

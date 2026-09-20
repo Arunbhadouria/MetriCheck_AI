@@ -41,16 +41,31 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     } catch {}
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers
-  });
+  // Safety timeout: abort if server doesn't respond within 12 seconds
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+  const signal = options.signal || controller.signal;
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData?.error?.message || `HTTP error ${response.status}`);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      signal
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.error?.message || `HTTP error ${response.status}`);
+    }
+
+    const json = await response.json();
+    return json.data;
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error('सर्वर प्रतिक्रिया समय समाप्त हुआ • Request timed out. Please check network and try again.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const json = await response.json();
-  return json.data;
 }

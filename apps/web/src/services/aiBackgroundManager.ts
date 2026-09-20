@@ -133,7 +133,11 @@ class AiBackgroundManager {
     }
 
     if (promisesToWait.length === 0) return;
-    await Promise.allSettled(promisesToWait);
+    // Strict safety timeout: never block UI for more than 3.5 seconds
+    await Promise.race([
+      Promise.allSettled(promisesToWait),
+      new Promise(resolve => setTimeout(resolve, 3500))
+    ]);
   }
 
   /**

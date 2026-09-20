@@ -5,7 +5,7 @@ import {
   Plus, Search, RefreshCw, ChevronRight, Layers, Clock, ShieldCheck,
   CheckCircle2, AlertOctagon, UserCheck, Award, Printer, Copy, Check,
   MapPin, Phone, Mail, Building2, Calendar, FileText, Sparkles,
-  ArrowLeft, ExternalLink, User, Scan, BookOpen, MessageSquare
+  ArrowLeft, ExternalLink, User, Scan, BookOpen, MessageSquare, Users
 } from 'lucide-react';
 import { fetchApi } from '../services/api';
 
@@ -325,6 +325,40 @@ export const Dashboard: React.FC = () => {
                   </div>
 
                   <ChevronRight className="w-4 h-4 text-amber-700 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </div>
+
+                {/* ══ OFFICERS DIRECTORY SHORTCUT CARD ═══════════════════════════ */}
+                <div
+                  onClick={() => navigate('/inspector/officers')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate('/inspector/officers');
+                    }
+                  }}
+                  className="p-3.5 rounded-xl bg-teal-50/80 hover:bg-teal-100/70 border border-teal-200 flex items-center justify-between shadow-xs transition cursor-pointer group"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Open Legal Metrology Officers Directory"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-lg bg-teal-600 text-white flex items-center justify-center shrink-0 font-bold shadow-xs">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs font-bold text-navy-950 truncate">
+                          अधिकारी निर्देशिका • Officers Directory
+                        </h4>
+                        <span className="badge badge-primary badge-xs font-bold text-[9px]">धारा 15</span>
+                      </div>
+                      <p className="text-[11px] text-teal-900 truncate">
+                        अन्य जोनों के अधिकारियों से संपर्क व अंतर-क्षेत्रीय डेटा अधियाचना
+                      </p>
+                    </div>
+                  </div>
+
+                  <ChevronRight className="w-4 h-4 text-teal-700 group-hover:translate-x-0.5 transition-transform shrink-0" />
                 </div>
 
                 {/* ══ LAWS & CITIZEN AWARENESS SHORTCUT CARD ═════════════════════ */}

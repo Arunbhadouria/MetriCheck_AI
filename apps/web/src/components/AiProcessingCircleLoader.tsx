@@ -1,5 +1,5 @@
-import React from 'react';
-import { Sparkles, ShieldCheck, Clock } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Sparkles, ShieldCheck, Clock, X, ArrowRight } from 'lucide-react';
 import { AiBackgroundTask } from '../services/aiBackgroundManager';
 
 interface AiProcessingCircleLoaderProps {
@@ -7,14 +7,39 @@ interface AiProcessingCircleLoaderProps {
   tasks?: AiBackgroundTask[];
   title?: string;
   subtitle?: string;
+  onClose?: () => void;
 }
 
 export const AiProcessingCircleLoader: React.FC<AiProcessingCircleLoaderProps> = ({
   isOpen,
   tasks = [],
   title,
-  subtitle
+  subtitle,
+  onClose
 }) => {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setElapsed(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setElapsed(s => s + 1);
+    }, 1000);
+
+    // Auto-dismiss safety timer after 12 seconds
+    const autoDismiss = setTimeout(() => {
+      if (onClose) onClose();
+    }, 12000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(autoDismiss);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const activeTaskCount = tasks.length;
@@ -28,6 +53,16 @@ export const AiProcessingCircleLoader: React.FC<AiProcessingCircleLoaderProps> =
       aria-labelledby="circle-loader-title"
     >
       <div className="bg-navy-900 border border-amber-500/30 shadow-[0_20px_60px_rgba(0,0,0,0.7)] rounded-3xl p-6 sm:p-8 max-w-sm sm:max-w-md w-full text-center space-y-6 relative overflow-hidden">
+        {/* Close / Dismiss Button if stuck */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-400 hover:text-white transition z-20 cursor-pointer"
+            title="Dismiss loader / रद्द करें"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
         {/* Tricolor Government Header Bar */}
         <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-white to-emerald-500 absolute top-0 left-0" />
 
@@ -111,6 +146,19 @@ export const AiProcessingCircleLoader: React.FC<AiProcessingCircleLoaderProps> =
             </p>
           </div>
         </div>
+
+        {/* If taking longer than 5 seconds, provide reassuring fallback button */}
+        {elapsed >= 5 && onClose && (
+          <div className="pt-1 animate-in fade-in slide-in-from-bottom-2">
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 px-4 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 rounded-xl text-amber-300 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+            >
+              <span>प्रतीक्षा छोड़ें व परिणाम देखें • Skip Wait & View</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Security & Integrity Assurance Note */}
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-emerald-400 font-semibold pt-1">

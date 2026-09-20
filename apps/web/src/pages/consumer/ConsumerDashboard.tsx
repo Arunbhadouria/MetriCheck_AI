@@ -5,11 +5,17 @@ import {
   PlusCircle, Search, Volume2, ArrowRight, ExternalLink,
   BookOpen, LogOut, Menu, X, ShoppingBag, User, Store,
   MapPin, Phone, MessageSquare, RefreshCw, Send, ChevronRight,
-  ShieldAlert, Sparkles, Award, Layers, Scale
+  ShieldAlert, Sparkles, Award, Layers, Scale, Trash2
 } from 'lucide-react';
 import { voiceAi } from '../../services/voiceAi';
 import { fetchApi } from '../../services/api';
 import { NavigationDrawer } from '../../components/NavigationDrawer';
+import {
+  getCitizenHistory,
+  saveCitizenHistory,
+  clearCitizenHistory,
+  DEMO_CITIZEN_HISTORY
+} from '../../services/consumerStorage';
 
 export const ConsumerDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -49,63 +55,21 @@ export const ConsumerDashboard: React.FC = () => {
       return;
     }
 
-    // Load Scan History from localStorage
+    // Load Scan History from phone-scoped storage
     try {
-      const rawHistory = localStorage.getItem('metricheck_citizen_history');
-      if (rawHistory) {
-        setHistory(JSON.parse(rawHistory));
-      } else {
-        // Seed initial demo history for evaluation
-        const initialSeed = [
-          {
-            id: 'hist_01',
-            name: 'Lays Classic Salted Potato Chips 50g',
-            brand: 'Lays / PepsiCo',
-            barcode: '8901491101831',
-            printedMrp: 20,
-            stickerPrice: 25,
-            expiryDate: '2026-11-20',
-            violations: ['DUAL_MRP_STICKER', 'SECTION_36_OVERCHARGING'],
-            status: 'VIOLATION',
-            storeName: 'गुप्ता किराना एवं जनरल स्टोर्स, विजय नगर',
-            scannedAt: new Date(Date.now() - 3600000 * 2).toISOString()
-          },
-          {
-            id: 'hist_02',
-            name: 'Amul Taaza Homogenised Toned Milk 1L',
-            brand: 'Amul',
-            barcode: '8901262010054',
-            printedMrp: 54,
-            stickerPrice: 58,
-            expiryDate: '2026-09-24',
-            violations: ['SECTION_36_OVERCHARGING'],
-            status: 'VIOLATION',
-            storeName: 'दैनिक डेयरी एवं प्रोविजन, इंदौर',
-            scannedAt: new Date(Date.now() - 3600000 * 24).toISOString()
-          },
-          {
-            id: 'hist_03',
-            name: 'Parle-G Gold Glucose Biscuits 100g',
-            brand: 'Parle Products',
-            barcode: '8901719101019',
-            printedMrp: 10,
-            expiryDate: '2026-12-30',
-            violations: [],
-            status: 'PASS',
-            storeName: 'अपना बाजार, इंदौर',
-            scannedAt: new Date(Date.now() - 3600000 * 48).toISOString()
-          }
-        ];
-        setHistory(initialSeed);
-        localStorage.setItem('metricheck_citizen_history', JSON.stringify(initialSeed));
-      }
+      const citizenScans = getCitizenHistory(citizenUser.phone);
+      setHistory(citizenScans);
     } catch (e) {
-      console.warn(e);
+      console.warn('Failed to load scan history:', e);
     }
 
-    // Load Citizen Complaints from API
+    // Load Citizen Complaints from API (strictly filtered by citizen's phone number)
     setLoadingComplaints(true);
-    fetchApi<any>('/complaints')
+    const complaintsUrl = citizenUser.phone
+      ? `/complaints?phone=${encodeURIComponent(citizenUser.phone)}`
+      : '/complaints';
+
+    fetchApi<any>(complaintsUrl)
       .then(res => {
         const data = res?.data || res || [];
         setComplaints(Array.isArray(data) ? data : []);
@@ -114,11 +78,12 @@ export const ConsumerDashboard: React.FC = () => {
       .finally(() => setLoadingComplaints(false));
   }, [citizenUser, navigate]);
 
-  // Real-time background sync for grievances every 5 seconds
+  // Real-time background sync for grievances every 5 seconds (scoped to phone)
   useEffect(() => {
-    if (!citizenUser) return;
+    if (!citizenUser?.phone) return;
+    const complaintsUrl = `/complaints?phone=${encodeURIComponent(citizenUser.phone)}`;
     const interval = setInterval(() => {
-      fetchApi<any>('/complaints')
+      fetchApi<any>(complaintsUrl)
         .then(res => {
           const data = res?.data || res || [];
           if (Array.isArray(data)) {
@@ -130,6 +95,18 @@ export const ConsumerDashboard: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [citizenUser]);
+
+  const handleLoadDemoData = () => {
+    saveCitizenHistory(DEMO_CITIZEN_HISTORY, citizenUser?.phone);
+    setHistory(DEMO_CITIZEN_HISTORY);
+  };
+
+  const handleClearHistory = () => {
+    if (window.confirm('क्या आप वाकई अपना स्कैन इतिहास हटाना चाहते हैं?')) {
+      clearCitizenHistory(citizenUser?.phone);
+      setHistory([]);
+    }
+  };
 
   // Keep active tab in sync with URL parameters (from NavigationDrawer or browser back/forward)
   useEffect(() => {
@@ -399,51 +376,86 @@ export const ConsumerDashboard: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {history.slice(0, 4).map((item, idx) => {
-                      const overcharge = item.stickerPrice && item.stickerPrice > item.printedMrp ? item.stickerPrice - item.printedMrp : 0;
-                      const isPass = item.status === 'PASS';
-
-                      return (
-                        <div
-                          key={item.id || idx}
-                          className="gov-card p-3.5 hover:border-purple-300 transition shadow-xs flex items-start justify-between gap-3"
-                        >
-                          <div className="min-w-0 space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-xs text-navy-950 truncate block">{item.name}</span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 truncate">
-                              {item.storeName || 'किराना स्टोर, इंदौर'}
-                            </p>
-                            <div className="flex items-center gap-2 pt-0.5">
-                              <span className="text-xs font-bold text-slate-800">MRP: ₹{item.printedMrp}</span>
-                              {overcharge > 0 ? (
-                                <span className="badge badge-error badge-xs font-black text-white">
-                                  +₹{overcharge} अधिशुल्क
-                                </span>
-                              ) : (
-                                <span className="badge badge-success badge-xs font-bold text-white">
-                                  सही मूल्य
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
+                    {history.length === 0 ? (
+                      <div className="gov-card p-6 text-center space-y-3 col-span-full border-dashed border-2 border-slate-200">
+                        <ShoppingBag className="w-8 h-8 text-slate-400 mx-auto" />
+                        <div>
+                          <h4 className="text-xs font-bold text-navy-950">अभी तक कोई उत्पाद स्कैन नहीं किया गया</h4>
+                          <p className="text-[11px] text-slate-500 max-w-sm mx-auto mt-0.5">
+                            दुकान पर सामान खरीदते समय बारकोड व MRP जांचने के लिए स्कैनर शुरू करें।
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
                           <button
                             type="button"
-                            onClick={() => handlePlayVoice(item)}
-                            className={`w-8 h-8 rounded-xl flex items-center justify-center transition shrink-0 cursor-pointer ${
-                              speakingProductId === item.id
-                                ? 'bg-amber-500 text-navy-950 animate-pulse'
-                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                            }`}
-                            title="Voice AI सुनें"
+                            onClick={() => navigate('/consumer/scan')}
+                            className="btn btn-primary btn-xs text-xs font-bold gap-1 cursor-pointer"
                           >
-                            <Volume2 className="w-4 h-4" />
+                            <PlusCircle className="w-3.5 h-3.5" />
+                            <span>सामान स्कैन करें • Scan Product</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleLoadDemoData}
+                            className="btn btn-ghost btn-xs text-[11px] text-purple-700 hover:bg-purple-50 gap-1 cursor-pointer border border-purple-200"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                            <span>डेमो डेटा लोड करें • Load Sample Scans</span>
                           </button>
                         </div>
-                      );
-                    })}
+                      </div>
+                    ) : (
+                      history.slice(0, 4).map((item, idx) => {
+                        const overcharge = item.stickerPrice && item.stickerPrice > item.printedMrp ? item.stickerPrice - item.printedMrp : 0;
+                        const isPass = item.status === 'PASS';
+
+                        return (
+                          <div
+                            key={item.id || idx}
+                            className="gov-card p-3.5 hover:border-purple-300 transition shadow-xs flex items-start justify-between gap-3"
+                          >
+                            <div className="min-w-0 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-xs text-navy-950 truncate block">{item.name}</span>
+                                {item.isDemo && (
+                                  <span className="badge badge-ghost badge-xs text-[9px] font-bold text-purple-700">
+                                    डेमो • Sample
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-500 truncate">
+                                {item.storeName || 'किराना स्टोर, इंदौर'}
+                              </p>
+                              <div className="flex items-center gap-2 pt-0.5">
+                                <span className="text-xs font-bold text-slate-800">MRP: ₹{item.printedMrp}</span>
+                                {overcharge > 0 ? (
+                                  <span className="badge badge-error badge-xs font-black text-white">
+                                    +₹{overcharge} अधिशुल्क
+                                  </span>
+                                ) : (
+                                  <span className="badge badge-success badge-xs font-bold text-white">
+                                    सही मूल्य
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handlePlayVoice(item)}
+                              className={`w-8 h-8 rounded-xl flex items-center justify-center transition shrink-0 cursor-pointer ${
+                                speakingProductId === item.id
+                                  ? 'bg-amber-500 text-navy-950 animate-pulse'
+                                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                              }`}
+                              title="Voice AI सुनें"
+                            >
+                              <Volume2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
@@ -525,15 +537,29 @@ export const ConsumerDashboard: React.FC = () => {
                   <p className="text-xs text-slate-500">आपके द्वारा जाँचे गए सभी उत्पादों का रिकॉर्ड</p>
                 </div>
 
-                <div className="relative">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="उत्पाद या दुकान का नाम खोजें..."
-                    className="input input-sm input-bordered pl-9 text-xs bg-white w-full sm:w-64"
-                  />
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 sm:flex-initial">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="उत्पाद या दुकान का नाम खोजें..."
+                      className="input input-sm input-bordered pl-9 text-xs bg-white w-full sm:w-64"
+                    />
+                  </div>
+
+                  {history.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearHistory}
+                      className="btn btn-ghost btn-sm text-xs text-red-600 hover:bg-red-50 gap-1 cursor-pointer shrink-0"
+                      title="स्कैन इतिहास हटाएं"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">इतिहास हटाएं</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -541,13 +567,27 @@ export const ConsumerDashboard: React.FC = () => {
                 <div className="gov-card p-12 text-center space-y-3">
                   <Clock className="w-10 h-10 text-slate-400 mx-auto" />
                   <h4 className="text-sm font-bold text-navy-900">कोई स्कैन इतिहास नहीं मिला</h4>
-                  <p className="text-xs text-slate-500">खरीददारी करते समय उत्पाद का पैकेट स्कैन करें।</p>
-                  <button
-                    onClick={() => navigate('/consumer/scan')}
-                    className="btn btn-primary btn-sm text-xs font-bold"
-                  >
-                    स्कैनर खोलें
-                  </button>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                    खरीददारी करते समय उत्पाद का पैकेट स्कैन करें, या मूल्यांकन के लिए नमूना डेटा लोड करें।
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => navigate('/consumer/scan')}
+                      className="btn btn-primary btn-sm text-xs font-bold gap-1 cursor-pointer"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      <span>स्कैनर खोलें • Open Scanner</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLoadDemoData}
+                      className="btn btn-outline btn-sm text-xs text-purple-700 border-purple-300 hover:bg-purple-50 gap-1 cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      <span>डेमो डेटा लोड करें • Load Sample Scans</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-2.5">
@@ -562,7 +602,14 @@ export const ConsumerDashboard: React.FC = () => {
                       >
                         <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
                           <div>
-                            <h4 className="font-bold text-sm text-navy-950">{item.name}</h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-bold text-sm text-navy-950">{item.name}</h4>
+                              {item.isDemo && (
+                                <span className="badge badge-ghost badge-xs text-[9px] font-bold text-purple-700">
+                                  डेमो • Sample
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-slate-500">
                               {item.brand} • स्कैन दिनांक: {new Date(item.scannedAt || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                             </p>

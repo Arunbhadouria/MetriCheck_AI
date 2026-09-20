@@ -12,6 +12,7 @@ import { ReportSubmitted } from './pages/ReportSubmitted';
 import { Dashboard } from './pages/Dashboard';
 import { AllInspections } from './pages/AllInspections';
 import { LawAwareness } from './pages/LawAwareness';
+import { OfficerDirectory } from './pages/OfficerDirectory';
 import { CitizenHome } from './pages/consumer/CitizenHome';
 import { ConsumerScanner } from './pages/consumer/ConsumerScanner';
 import { ConsumerProductResult } from './pages/consumer/ConsumerProductResult';
@@ -88,7 +89,7 @@ const ConsumerProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ child
           onConfirm={() => {
             localStorage.removeItem('metricheck_token');
             localStorage.removeItem('metricheck_user');
-            navigate('/consumer/auth');
+            navigate('/consumer/scan');
           }}
         />
       </div>
@@ -185,15 +186,16 @@ export const App: React.FC = () => {
         
         <Route path="/consumer/dashboard" element={<ConsumerProtectedRoute><ConsumerDashboard /></ConsumerProtectedRoute>} />
         <Route path="/consumer/home" element={<ConsumerProtectedRoute><CitizenHome /></ConsumerProtectedRoute>} />
-        <Route path="/consumer/scan" element={<ConsumerProtectedRoute><ConsumerScanner /></ConsumerProtectedRoute>} />
-        <Route path="/consumer/result" element={<ConsumerProtectedRoute><ConsumerProductResult /></ConsumerProtectedRoute>} />
-        <Route path="/consumer/summary" element={<ConsumerProtectedRoute><ConsumerSessionSummary /></ConsumerProtectedRoute>} />
+        <Route path="/consumer/scan" element={<ConsumerScanner />} />
+        <Route path="/consumer/result" element={<ConsumerProductResult />} />
+        <Route path="/consumer/summary" element={<ConsumerSessionSummary />} />
         <Route path="/consumer/complaint" element={<ConsumerProtectedRoute><ConsumerComplaintForm /></ConsumerProtectedRoute>} />
-        <Route path="/consumer/track" element={<ConsumerProtectedRoute><ConsumerGrievanceTracker /></ConsumerProtectedRoute>} />
+        <Route path="/consumer/track" element={<ConsumerGrievanceTracker />} />
 
         {/* ══ INSPECTOR PORTAL ROUTES (PROTECTED) ══════════════════════════ */}
         <Route path="/inspector/laws" element={<InspectorProtectedRoute><LawAwareness /></InspectorProtectedRoute>} />
         <Route path="/inspector/dashboard" element={<InspectorProtectedRoute><Dashboard /></InspectorProtectedRoute>} />
+        <Route path="/inspector/officers" element={<InspectorProtectedRoute><OfficerDirectory /></InspectorProtectedRoute>} />
         <Route path="/inspector/inspections" element={<InspectorProtectedRoute><AllInspections /></InspectorProtectedRoute>} />
         <Route path="/inspector/inspections/new" element={<InspectorProtectedRoute><JurisdictionSetup /></InspectorProtectedRoute>} />
         <Route path="/inspector/inspections/:id/scan" element={<InspectorProtectedRoute><Scanner /></InspectorProtectedRoute>} />
