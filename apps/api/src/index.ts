@@ -30,6 +30,9 @@ if (!process.env.GEMINI_API_KEY) {
   }
 }
 
+// Use environment variable for security (injected via .env locally or Render Dashboard in production)
+const GEMINI_API_KEY = (process.env.GEMINI_API_KEY || '').trim();
+
 // Initialize database connection
 initializeDatabase().catch(err => console.error('Database init error:', err));
 
@@ -627,22 +630,25 @@ async function performAiPackageAnalysis(
   let declarations: any[] = [];
   let rawText = '';
 
-  // 1. Priority 1: Direct Google Gemini Vision API (blazing fast ~2.5 - 3.5s, no local python/uvicorn contention)
-  if (process.env.GEMINI_API_KEY) {
+  // 1. Priority 1: Direct Google Gemini Vision API (fast, high-precision legal metrology OCR)
+  if (GEMINI_API_KEY) {
     try {
       const prompt = `You are a High-Precision Statutory Legal Metrology Vision OCR Engine under the Legal Metrology (Packaged Commodities) Rules, 2011.
-Examine the provided product package image(s). Return ONLY a single JSON object:
+Examine all provided package image(s) (Front artwork, Back label, MRP / PKD stamp, sides).
+Extract all statutory legal metrology declarations verbatim. Even if in Hindi or English, extract with maximum accuracy.
+Return ONLY a single valid JSON object:
 {
-  "PRODUCT_NAME": "product name or generic name",
-  "MRP": "numeric MRP with currency or null",
-  "NET_QUANTITY": "net quantity with unit e.g. 200g, 500ml",
-  "MFG_DATE": "date of packing/mfg or null",
-  "EXPIRY_DATE": "expiry date or best before or null",
-  "BATCH_NUMBER": "batch/lot number or null",
-  "MANUFACTURER": "manufacturer/packer company name or null",
-  "ADDRESS": "postal address or null",
-  "CONSUMER_CARE": "customer care phone or email or null",
-  "COUNTRY_OF_ORIGIN": "country or India or null"
+  "PRODUCT_NAME": "generic or trade name of product e.g. Balm, Atta, Chips, Biscuits",
+  "BRAND": "brand or manufacturer brand e.g. A.P. Special, Tata, Amul, Lays",
+  "MRP": "numeric maximum retail price e.g. 35.00, 10, 250",
+  "NET_QUANTITY": "net quantity with metric unit e.g. 12g, 500ml, 1 kg",
+  "MFG_DATE": "manufacturing or packaging date e.g. APR-24, 05/2026",
+  "EXPIRY_DATE": "expiry date or best before statement e.g. 3 years from Mfg",
+  "BATCH_NUMBER": "batch or lot number e.g. 227",
+  "MANUFACTURER": "name of manufacturer or packer",
+  "ADDRESS": "postal address of manufacturer/packer",
+  "CONSUMER_CARE": "customer care phone number or email address",
+  "COUNTRY_OF_ORIGIN": "country of origin (e.g. India)"
 }`;
 
       const parts: any[] = [{ text: prompt }];
@@ -660,40 +666,53 @@ Examine the provided product package image(s). Return ONLY a single JSON object:
       }
 
       if (parts.length > 1) {
-        // Strict 8-second timeout on Gemini API
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: AbortSignal.timeout(8000),
-            body: JSON.stringify({
-              contents: [{ parts }],
-              generationConfig: {
-                response_mime_type: 'application/json',
-                temperature: 0.0,
-                thinking_config: { thinking_budget: 0 }
+        // Multi-model fallback: prioritize fast flash-lite, fallback to 2.5-flash
+        const candidateModels = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+        for (const modelName of candidateModels) {
+          try {
+            const geminiRes = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: AbortSignal.timeout(12000),
+                body: JSON.stringify({
+                  contents: [{ parts }],
+                  generationConfig: {
+                    response_mime_type: 'application/json',
+                    temperature: 0.0,
+                    thinking_config: { thinking_budget: 0 }
+                  }
+                })
               }
-            })
-          }
-        );
+            );
 
-        if (geminiRes.ok) {
-          const gData: any = await geminiRes.json();
-          const textCandidate = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (textCandidate) {
-            const parsed = JSON.parse(textCandidate);
-            rawText = JSON.stringify(parsed);
-            for (const [key, val] of Object.entries(parsed)) {
-              if (val && String(val).trim().toLowerCase() !== 'null') {
-                declarations.push({
-                  field: key,
-                  rawValue: String(val).trim(),
-                  normalizedValue: {},
-                  confidence: 0.95
-                });
+            if (geminiRes.ok) {
+              const gData: any = await geminiRes.json();
+              const textCandidate = gData?.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (textCandidate) {
+                const parsed = JSON.parse(textCandidate);
+                rawText = JSON.stringify(parsed);
+                for (const [key, val] of Object.entries(parsed)) {
+                  if (val && String(val).trim().toLowerCase() !== 'null') {
+                    declarations.push({
+                      field: key,
+                      rawValue: String(val).trim(),
+                      normalizedValue: {},
+                      confidence: 0.95
+                    });
+                  }
+                }
+                if (declarations.length > 0) {
+                  break; // Successfully extracted statutory fields!
+                }
               }
+            } else {
+              const errBody = await geminiRes.text().catch(() => '');
+              console.warn(`Gemini Vision model ${modelName} returned HTTP ${geminiRes.status}:`, errBody.substring(0, 160));
             }
+          } catch (modelErr: any) {
+            console.warn(`Gemini Vision model ${modelName} request error:`, modelErr.message);
           }
         }
       }
@@ -757,22 +776,33 @@ app.post('/api/v1/consumer/analyze', upload.any(), async (req: Request, res: Res
     };
 
     const rawProductName = getField('PRODUCT_NAME');
-    const productName = rawProductName || 'Scanned Package';
+    const rawBrand = getField('BRAND');
 
-    // Extract Brand
-    let brandName = 'Packaged Commodity';
-    const brandMatch = productName.match(/^(Tata|Nestle|Amul|Britannia|Haldiram|Patanjali|Dabur|ITC|Parle|Cadbury|Lays|Kurkure|Bikaji|Balaji|Mother Dairy|Pepsi|Coca-Cola|Surf Excel|Colgate|Dettol|Maggi|Kwality Wall'?s)\b/i);
-    if (brandMatch) {
-      brandName = brandMatch[1];
-    } else if (rawText) {
-      const brandInText = rawText.match(/\b(Tata|Nestle|Amul|Britannia|Haldiram|Patanjali|Dabur|ITC|Parle|Cadbury|Lays|Kurkure|Bikaji|Balaji|Mother Dairy|Pepsi|Coca-Cola|Surf Excel|Colgate|Dettol|Maggi|Kwality Wall'?s)\b/i);
-      if (brandInText) brandName = brandInText[1];
+    // Combine Brand and Product Name nicely (e.g. "A.P. SPECIAL" + "BALM" -> "A.P. SPECIAL BALM")
+    let productName = rawProductName || rawBrand || 'Scanned Package';
+    if (rawBrand && rawProductName && !rawProductName.toLowerCase().includes(rawBrand.toLowerCase())) {
+      productName = `${rawBrand} ${rawProductName}`;
     }
 
-    // Parse MRP
+    // Extract Brand
+    let brandName = rawBrand || 'Packaged Commodity';
+    if (brandName === 'Packaged Commodity') {
+      const brandMatch = productName.match(/^(Tata|Nestle|Amul|Britannia|Haldiram|Patanjali|Dabur|ITC|Parle|Cadbury|Lays|Kurkure|Bikaji|Balaji|Mother Dairy|Pepsi|Coca-Cola|Surf Excel|Colgate|Dettol|Maggi|Kwality Wall'?s|A\.?P\.?\s*Special)\b/i);
+      if (brandMatch) brandName = brandMatch[1];
+    }
+
+    // Parse MRP (supports numeric 35, 35.00, ₹35, Rs. 35, 35/-, etc.)
     const rawMrpStr = getField('MRP') || '';
-    const mrpMatch = rawMrpStr.match(/(?:₹|Rs\.?|INR)?\s*([0-9]+(?:\.[0-9]{1,2})?)/i);
+    const mrpMatch = rawMrpStr.match(/(?:₹|Rs\.?|INR|रु)?\s*([0-9]+(?:\.[0-9]{1,2})?)/i);
     let printedMrp = mrpMatch ? parseFloat(mrpMatch[1]) : 0;
+
+    // Fallback regex on raw text dump if MRP was missed
+    if (printedMrp === 0 && rawText) {
+      const fallbackMrpMatch = rawText.match(/(?:MRP|PRICE|M\.R\.P\.?|मूल्य|₹|Rs\.?)\s*(?:inclusive of all taxes)?[:\s\-\.]*(?:₹|Rs\.?|INR|रु)?\s*([0-9]+(?:\.[0-9]{1,2})?)/i);
+      if (fallbackMrpMatch) {
+        printedMrp = parseFloat(fallbackMrpMatch[1]);
+      }
+    }
 
     // Check if user submitted a sticker/billed price or if detected
     const userStickerPrice = req.body.stickerPrice ? parseFloat(req.body.stickerPrice) : undefined;
